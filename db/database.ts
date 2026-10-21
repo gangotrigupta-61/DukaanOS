@@ -1,5 +1,14 @@
 import * as SQLite from 'expo-sqlite';
-import { CreateProductInput, CreateShopInput, DatabaseInitResult, Product, Shop } from '../types';
+import {
+  CreateProductInput,
+  CreateShopInput,
+  DatabaseInitResult,
+  Product,
+  RecordSaleInput,
+  RecordSaleResult,
+  Sale,
+  Shop,
+} from '../types';
 
 export const DATABASE_NAME = 'dukaanos.db';
 
@@ -55,9 +64,21 @@ export async function initDatabase(db?: SQLite.SQLiteDatabase): Promise<Database
         );
       `);
 
+      // Sales table for recording completed sales (Phase 3)
+      await activeDb.execAsync(`
+        CREATE TABLE IF NOT EXISTS sales (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          product_id INTEGER NOT NULL,
+          quantity REAL NOT NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          FOREIGN KEY (product_id) REFERENCES products(id)
+        );
+      `);
+
       // Helpful indices for fast lookups
       await activeDb.execAsync(`
         CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+        CREATE INDEX IF NOT EXISTS idx_sales_product_id ON sales(product_id);
       `);
     });
 
@@ -220,4 +241,109 @@ export async function getProductById(
     id
   );
   return row ?? null;
+}
+
+// ==========================================
+// SALE OPERATIONS (Phase 3)
+// ==========================================
+
+/**
+ * Atomically records a product sale and decreases inventory stock.
+ * - Validates product existence
+ * - Validates requested quantity > 0
+ * - Validates requested quantity <= available stock
+ * - Uses SQLite transaction to guarantee atomicity
+ * - Stock never becomes negative
+ * - Decimal quantities supported (e.g. 3.5 kg, 0.5 litre)
+ */
+export async function recordSale(
+  input: RecordSaleInput,
+  db?: SQLite.SQLiteDatabase
+): Promise<RecordSaleResult> {
+  const activeDb = db ?? (await getDatabase());
+  const productId = input.product_id;
+  const saleQty = Number(input.quantity);
+
+  if (isNaN(saleQty) || saleQty <= 0) {
+    throw new Error('Quantity must be greater than 0');
+  }
+
+  let resultData: RecordSaleResult | null = null;
+
+  await activeDb.withTransactionAsync(async () => {
+    // 1. Fetch current product record
+    const product = await activeDb.getFirstAsync<Product>(
+      'SELECT id, name, quantity, unit, low_stock_threshold, created_at, updated_at FROM products WHERE id = ?;',
+      productId
+    );
+
+    if (!product) {
+      throw new Error('Product not found');
+    }
+
+    // 2. Validate sufficient stock
+    if (saleQty > product.quantity) {
+      throw new Error(`Not enough stock. Available: ${product.quantity} ${product.unit}`);
+    }
+
+    // 3. Compute remaining stock with rounding to avoid IEEE-754 precision artifacts
+    const rawRemaining = product.quantity - saleQty;
+    const remaining = Math.round(rawRemaining * 1000000) / 1000000;
+
+    // 4. Update product quantity and updated_at
+    await activeDb.runAsync(
+      "UPDATE products SET quantity = ?, updated_at = datetime('now') WHERE id = ?;",
+      remaining,
+      productId
+    );
+
+    // 5. Insert sale record
+    const saleInsert = await activeDb.runAsync(
+      "INSERT INTO sales (product_id, quantity, created_at) VALUES (?, ?, datetime('now'));",
+      productId,
+      saleQty
+    );
+
+    const saleRecord = await activeDb.getFirstAsync<Sale>(
+      'SELECT id, product_id, quantity, created_at FROM sales WHERE id = ?;',
+      saleInsert.lastInsertRowId
+    );
+
+    if (!saleRecord) {
+      throw new Error('Failed to record sale transaction');
+    }
+
+    const updatedProduct = await activeDb.getFirstAsync<Product>(
+      'SELECT id, name, quantity, unit, low_stock_threshold, created_at, updated_at FROM products WHERE id = ?;',
+      productId
+    );
+
+    if (!updatedProduct) {
+      throw new Error('Failed to retrieve updated product');
+    }
+
+    resultData = {
+      sale: saleRecord,
+      product: updatedProduct,
+      previous_quantity: product.quantity,
+      remaining_quantity: remaining,
+    };
+  });
+
+  if (!resultData) {
+    throw new Error('Sale transaction could not be completed');
+  }
+
+  return resultData;
+}
+
+/**
+ * Retrieves all completed sales records.
+ */
+export async function getSales(db?: SQLite.SQLiteDatabase): Promise<Sale[]> {
+  const activeDb = db ?? (await getDatabase());
+  const rows = await activeDb.getAllAsync<Sale>(
+    'SELECT id, product_id, quantity, created_at FROM sales ORDER BY id DESC;'
+  );
+  return rows;
 }

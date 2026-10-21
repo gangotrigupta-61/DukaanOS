@@ -16,11 +16,13 @@ import { Product } from '../types';
 interface ProductsScreenProps {
   onBack: () => void;
   onAddProduct: () => void;
+  onQuickSale: () => void;
 }
 
 export const ProductsScreen: React.FC<ProductsScreenProps> = ({
   onBack,
   onAddProduct,
+  onQuickSale,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +58,10 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
       undefined,
       { maximumFractionDigits: 3 }
     );
+    const isOutOfStock = item.quantity <= 0;
 
     return (
-      <View style={styles.productCard}>
+      <View style={[styles.productCard, isOutOfStock && styles.productCardEmpty]}>
         <View style={styles.productInfo}>
           <Text style={styles.productName}>{item.name}</Text>
           <Text style={styles.thresholdText}>
@@ -66,9 +69,28 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
           </Text>
         </View>
 
-        <View style={styles.stockBadge}>
-          <Text style={styles.stockQuantity}>{formattedQty}</Text>
-          <Text style={styles.stockUnit}>{item.unit}</Text>
+        <View
+          style={[
+            styles.stockBadge,
+            isOutOfStock && styles.stockBadgeEmpty,
+          ]}
+        >
+          <Text
+            style={[
+              styles.stockQuantity,
+              isOutOfStock && styles.stockQuantityEmpty,
+            ]}
+          >
+            {formattedQty}
+          </Text>
+          <Text
+            style={[
+              styles.stockUnit,
+              isOutOfStock && styles.stockUnitEmpty,
+            ]}
+          >
+            {item.unit}
+          </Text>
         </View>
       </View>
     );
@@ -91,20 +113,32 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
 
           <View style={styles.headerTitleRow}>
             <View>
-              <Text style={styles.title}>Stock List</Text>
+              <Text style={styles.title}>Products & Stock</Text>
               <Text style={styles.subtitle}>
                 {products.length} {products.length === 1 ? 'item' : 'items'} in inventory
               </Text>
             </View>
 
-            <TouchableOpacity
-              style={styles.headerAddButton}
-              onPress={onAddProduct}
-              accessibilityRole="button"
-              accessibilityLabel="Add Product"
-            >
-              <Text style={styles.headerAddButtonText}>+ Add</Text>
-            </TouchableOpacity>
+            <View style={styles.headerActions}>
+              {products.length > 0 && (
+                <TouchableOpacity
+                  style={styles.headerSaleButton}
+                  onPress={onQuickSale}
+                  accessibilityRole="button"
+                  accessibilityLabel="Quick Sale"
+                >
+                  <Text style={styles.headerSaleButtonText}>⚡ Sale</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={styles.headerAddButton}
+                onPress={onAddProduct}
+                accessibilityRole="button"
+                accessibilityLabel="Add Product"
+              >
+                <Text style={styles.headerAddButtonText}>+ Add</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
@@ -186,14 +220,30 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
     marginTop: 2,
   },
+  headerActions: {
+    flexDirection: 'row',
+    gap: Spacing.xs + 2,
+    alignItems: 'center',
+  },
+  headerSaleButton: {
+    backgroundColor: Colors.primaryDark,
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 8,
+  },
+  headerSaleButtonText: {
+    ...Typography.bodySmall,
+    fontWeight: '700',
+    color: Colors.textInverse,
+  },
   headerAddButton: {
     backgroundColor: Colors.primary,
     paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md + 4,
+    paddingHorizontal: Spacing.md,
     borderRadius: 8,
   },
   headerAddButtonText: {
-    ...Typography.body,
+    ...Typography.bodySmall,
     fontWeight: '700',
     color: Colors.textInverse,
   },
@@ -219,6 +269,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
+  productCardEmpty: {
+    backgroundColor: '#FAFAFA',
+    borderColor: '#EEEEEE',
+  },
   productInfo: {
     flex: 1,
     paddingRight: Spacing.md,
@@ -243,15 +297,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 70,
   },
+  stockBadgeEmpty: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#FFCDD2',
+  },
   stockQuantity: {
     fontSize: 20,
     fontWeight: '700',
     color: Colors.primaryDark,
   },
+  stockQuantityEmpty: {
+    color: Colors.error,
+  },
   stockUnit: {
     ...Typography.badge,
     color: Colors.primaryLight,
     marginTop: -2,
+  },
+  stockUnitEmpty: {
+    color: Colors.error,
   },
   centerContainer: {
     flex: 1,

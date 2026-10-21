@@ -71,7 +71,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                 <Text style={styles.shopGreeting}>Active Store</Text>
                 <Text style={styles.shopTitle}>{shop.shop_name}</Text>
                 <Text style={styles.shopDetails}>
-                  {shop.shop_type} • {shop.language === 'hi' ? 'हिंदी' : shop.language === 'hi-en' ? 'Hinglish' : 'English'}
+                  {shop.shop_type} •{' '}
+                  {shop.language === 'hi'
+                    ? 'हिंदी'
+                    : shop.language === 'hi-en'
+                    ? 'Hinglish'
+                    : 'English'}
                 </Text>
               </View>
               <TouchableOpacity
@@ -101,9 +106,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
           </TouchableOpacity>
         )}
 
-        {/* Phase 2 Primary Workflow Actions */}
+        {/* Core Shopkeeper Actions */}
         <View style={styles.actionsSection}>
-          <Text style={styles.sectionHeader}>Stock Management</Text>
+          <Text style={styles.sectionHeader}>Quick Actions</Text>
+
+          {/* Quick Sale Hero Button */}
+          <TouchableOpacity
+            style={styles.heroSaleButton}
+            onPress={() => onNavigate('quick_sale')}
+            accessibilityRole="button"
+            accessibilityLabel="Record Quick Sale"
+          >
+            <View style={styles.heroSaleIconContainer}>
+              <Text style={styles.heroSaleIcon}>⚡</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.heroSaleTitle}>Quick Sale</Text>
+              <Text style={styles.heroSaleSubtitle}>
+                Record sale and automatically decrease stock
+              </Text>
+            </View>
+            <Text style={styles.heroSaleArrow}>→</Text>
+          </TouchableOpacity>
 
           {/* View Stock Button */}
           <TouchableOpacity
@@ -164,14 +188,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                 </Text>
               </View>
               <Text style={styles.detailsText}>
-                Verified tables: {initResult.tables.join(', ') || 'products, shops'}
+                Verified tables:{' '}
+                {initResult.tables.join(', ') || 'products, sales, shops'}
               </Text>
             </View>
           ) : (
             <View style={styles.statusRow}>
               <View style={styles.statusIndicatorError} />
               <Text style={styles.statusTextError}>
-                Storage initialization error: {initResult?.error || 'Unknown error'}
+                Storage initialization error:{' '}
+                {initResult?.error || 'Unknown error'}
               </Text>
             </View>
           )}
@@ -180,7 +206,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         {/* Footer info */}
         <View style={styles.footer}>
           <Text style={styles.footerNote}>
-            DukaanOS Phase 2 • Offline Store & Stock Ready
+            DukaanOS Phase 3 • Core Quick Sale & Automatic Stock Active
           </Text>
         </View>
       </ScrollView>
@@ -299,9 +325,51 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: Spacing.md,
   },
+  heroSaleButton: {
+    backgroundColor: Colors.primaryDark,
+    borderRadius: 12,
+    padding: Spacing.md + 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  heroSaleIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  heroSaleIcon: {
+    fontSize: 24,
+  },
+  heroSaleTitle: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.textInverse,
+    fontSize: 18,
+  },
+  heroSaleSubtitle: {
+    ...Typography.bodySmall,
+    color: Colors.accentLight,
+    marginTop: 2,
+  },
+  heroSaleArrow: {
+    fontSize: 22,
+    color: Colors.textInverse,
+    fontWeight: '700',
+    marginLeft: Spacing.sm,
+  },
   primaryActionButton: {
     backgroundColor: Colors.surface,
-    borderColor: Colors.primary,
+    borderColor: Colors.borderStrong,
     borderWidth: 1.5,
     borderRadius: 12,
     padding: Spacing.md,
@@ -309,7 +377,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: Spacing.md,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 2,

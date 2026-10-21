@@ -4,6 +4,7 @@ import {
   AddProductScreen,
   HomeScreen,
   ProductsScreen,
+  QuickSaleScreen,
   ShopSetupScreen,
 } from './app/index';
 import { Colors } from './constants/theme';
@@ -59,6 +60,7 @@ export default function App() {
         <ProductsScreen
           onBack={() => setCurrentScreen('home')}
           onAddProduct={() => setCurrentScreen('add_product')}
+          onQuickSale={() => setCurrentScreen('quick_sale')}
         />
       );
 
@@ -67,6 +69,15 @@ export default function App() {
         <AddProductScreen
           onSuccess={() => setCurrentScreen('products')}
           onCancel={() => setCurrentScreen('products')}
+        />
+      );
+
+    case 'quick_sale':
+      return (
+        <QuickSaleScreen
+          onBack={() => setCurrentScreen('home')}
+          onNavigateToAddProduct={() => setCurrentScreen('add_product')}
+          onNavigateToProducts={() => setCurrentScreen('products')}
         />
       );
 

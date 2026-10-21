@@ -40,10 +40,29 @@ export interface Shop {
 
 export type CreateShopInput = Omit<Shop, 'id' | 'created_at'>;
 
+export interface Sale {
+  id: number;
+  product_id: number;
+  quantity: number;
+  created_at: string;
+}
+
+export interface RecordSaleInput {
+  product_id: number;
+  quantity: number;
+}
+
+export interface RecordSaleResult {
+  sale: Sale;
+  product: Product;
+  previous_quantity: number;
+  remaining_quantity: number;
+}
+
 export interface DatabaseInitResult {
   success: boolean;
   tables: string[];
   error?: string;
 }
 
-export type Screen = 'home' | 'products' | 'add_product' | 'shop_setup';
+export type Screen = 'home' | 'products' | 'add_product' | 'shop_setup' | 'quick_sale';
