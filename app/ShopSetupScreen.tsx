@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import { getShop, saveShop } from '../db';
 
 interface ShopSetupScreenProps {
@@ -21,18 +22,18 @@ interface ShopSetupScreenProps {
 }
 
 const SHOP_TYPES = [
-  'Kirana / Grocery',
-  'General Store',
-  'Dairy & Milk',
-  'Fruits & Vegetables',
-  'Stationery & Chemist',
-  'Other Retail',
+  { label: 'Kirana / किराना स्टोर', value: 'Kirana / Grocery' },
+  { label: 'General Store / जनरल स्टोर', value: 'General Store' },
+  { label: 'Dairy & Milk / डेयरी', value: 'Dairy & Milk' },
+  { label: 'Vegetables / सब्जी दुकान', value: 'Fruits & Vegetables' },
+  { label: 'Chemist / मेडिकल', value: 'Stationery & Chemist' },
+  { label: 'Other Retail / अन्य', value: 'Other Retail' },
 ];
 
 const LANGUAGES = [
-  { code: 'en', label: 'English' },
+  { code: 'hi-en', label: 'Hinglish (हिंग्लिश)' },
   { code: 'hi', label: 'हिंदी (Hindi)' },
-  { code: 'hi-en', label: 'Hinglish' },
+  { code: 'en', label: 'English' },
 ];
 
 export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
@@ -41,7 +42,7 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
 }) => {
   const [shopName, setShopName] = useState('');
   const [shopType, setShopType] = useState('Kirana / Grocery');
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('hi-en');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -54,7 +55,7 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
         if (existing) {
           setShopName(existing.shop_name);
           setShopType(existing.shop_type || 'Kirana / Grocery');
-          setLanguage(existing.language || 'en');
+          setLanguage(existing.language || 'hi-en');
           setHasExistingShop(true);
         }
       } catch (err) {
@@ -69,7 +70,7 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
   const handleSave = async () => {
     const trimmed = shopName.trim();
     if (!trimmed) {
-      setErrorMessage('Please enter your shop name');
+      setErrorMessage(Strings.valEnterShopName);
       return;
     }
 
@@ -105,7 +106,10 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <View style={styles.header}>
             {onCancel && hasExistingShop && (
@@ -115,14 +119,14 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Go back"
               >
-                <Text style={styles.backButtonText}>← Back</Text>
+                <Text style={styles.backButtonText}>← Back / वापस</Text>
               </TouchableOpacity>
             )}
             <Text style={styles.title}>
-              {hasExistingShop ? 'Shop Settings' : 'Setup Your Shop'}
+              {hasExistingShop ? 'Shop Details / दुकान विवरण' : 'Setup Your Shop / दुकान सेटअप'}
             </Text>
             <Text style={styles.subtitle}>
-              Configure your local store profile. Everything is stored offline on this device.
+              Configure your local store profile. Everything works 100% offline.
             </Text>
           </View>
 
@@ -136,11 +140,11 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
           {/* Form Fields */}
           <View style={styles.formSection}>
             <Text style={styles.label}>
-              Shop Name <Text style={styles.required}>*</Text>
+              Shop Name / दुकान का नाम <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Gupta Kirana Store"
+              placeholder="e.g. Gupta General Store"
               placeholderTextColor={Colors.textMuted}
               value={shopName}
               onChangeText={(text) => {
@@ -152,15 +156,17 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
             />
 
             {/* Shop Type Selection */}
-            <Text style={[styles.label, { marginTop: Spacing.lg }]}>Shop Type</Text>
+            <Text style={[styles.label, { marginTop: Spacing.lg }]}>
+              Shop Type / दुकान का प्रकार
+            </Text>
             <View style={styles.chipsContainer}>
               {SHOP_TYPES.map((type) => {
-                const isSelected = shopType === type;
+                const isSelected = shopType === type.value;
                 return (
                   <TouchableOpacity
-                    key={type}
+                    key={type.value}
                     style={[styles.chip, isSelected && styles.chipSelected]}
-                    onPress={() => setShopType(type)}
+                    onPress={() => setShopType(type.value)}
                     accessibilityRole="button"
                   >
                     <Text
@@ -169,7 +175,7 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
                         isSelected && styles.chipTextSelected,
                       ]}
                     >
-                      {type}
+                      {type.label}
                     </Text>
                   </TouchableOpacity>
                 );
@@ -177,7 +183,9 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
             </View>
 
             {/* Language Selection */}
-            <Text style={[styles.label, { marginTop: Spacing.lg }]}>Language</Text>
+            <Text style={[styles.label, { marginTop: Spacing.lg }]}>
+              Language / भाषा प्राथमिकता
+            </Text>
             <View style={styles.chipsContainer}>
               {LANGUAGES.map((lang) => {
                 const isSelected = language === lang.code;
@@ -214,7 +222,7 @@ export const ShopSetupScreen: React.FC<ShopSetupScreenProps> = ({
               <ActivityIndicator color={Colors.textInverse} />
             ) : (
               <Text style={styles.saveButtonText}>
-                {hasExistingShop ? 'Update Shop Details' : 'Continue to DukaanOS'}
+                {hasExistingShop ? 'Update Details / सेव करें' : 'Start Using DukaanOS / शुरू करें'}
               </Text>
             )}
           </TouchableOpacity>
@@ -240,22 +248,24 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.xxl,
   },
   header: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: Touch.minTarget,
+    justifyContent: 'center',
     paddingVertical: Spacing.xs,
-    paddingRight: Spacing.sm,
-    marginBottom: Spacing.sm,
+    paddingRight: Spacing.md,
+    marginBottom: Spacing.xs,
   },
   backButtonText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   title: {
     ...Typography.title,
@@ -272,7 +282,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   errorText: {
     ...Typography.bodySmall,
@@ -284,7 +294,7 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
@@ -297,7 +307,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 8,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.inputHeight,
     ...Typography.body,
     color: Colors.textPrimary,
   },
@@ -309,15 +319,16 @@ const styles = StyleSheet.create({
   chip: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: Spacing.sm,
+    borderWidth: 1.5,
+    borderRadius: 24,
+    minHeight: Touch.chipHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: Spacing.md,
   },
   chipSelected: {
     backgroundColor: Colors.primarySurface,
     borderColor: Colors.primary,
-    borderWidth: 1.5,
   },
   chipText: {
     ...Typography.bodySmall,
@@ -325,12 +336,12 @@ const styles = StyleSheet.create({
   },
   chipTextSelected: {
     color: Colors.primaryDark,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   saveButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md + 2,
-    borderRadius: 10,
+    minHeight: Touch.buttonHeight,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -343,7 +354,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    ...Typography.body,
+    ...Typography.subtitle,
     fontWeight: '700',
     color: Colors.textInverse,
   },

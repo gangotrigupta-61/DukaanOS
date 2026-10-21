@@ -9,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import { getLowStockProducts } from '../db';
 import { LowStockItem } from '../types';
 
@@ -21,7 +22,6 @@ interface LowStockScreenProps {
 
 export const LowStockScreen: React.FC<LowStockScreenProps> = ({
   onBack,
-  onNavigateToQuickSale,
   onNavigateToProducts,
 }) => {
   const [items, setItems] = useState<LowStockItem[]>([]);
@@ -69,7 +69,9 @@ export const LowStockScreen: React.FC<LowStockScreenProps> = ({
         ]}
       >
         <View style={styles.itemHeaderRow}>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemName} numberOfLines={1}>
+            {item.name}
+          </Text>
           <View
             style={[
               styles.statusBadge,
@@ -86,14 +88,14 @@ export const LowStockScreen: React.FC<LowStockScreenProps> = ({
                   : styles.statusBadgeTextLow,
               ]}
             >
-              {item.is_out_of_stock ? 'OUT OF STOCK' : 'LOW STOCK'}
+              {item.is_out_of_stock ? Strings.statusOutOfStock : Strings.statusLowStock}
             </Text>
           </View>
         </View>
 
         <View style={styles.itemDetailsRow}>
           <View style={styles.stockInfo}>
-            <Text style={styles.currentStockLabel}>Remaining Stock:</Text>
+            <Text style={styles.currentStockLabel}>Remaining / बाकी बचा:</Text>
             <Text
               style={[
                 styles.currentStockValue,
@@ -105,7 +107,7 @@ export const LowStockScreen: React.FC<LowStockScreenProps> = ({
           </View>
 
           <View style={styles.thresholdInfo}>
-            <Text style={styles.thresholdLabel}>Alert Level:</Text>
+            <Text style={styles.thresholdLabel}>Alert Level / अलर्ट सीमा:</Text>
             <Text style={styles.thresholdValue}>
               Below {formattedThreshold} {item.unit}
             </Text>
@@ -127,12 +129,12 @@ export const LowStockScreen: React.FC<LowStockScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Back to Home"
           >
-            <Text style={styles.backButtonText}>← Home</Text>
+            <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Low Stock Alerts</Text>
+          <Text style={styles.title}>{Strings.lowStock}</Text>
           <Text style={styles.subtitle}>
-            Products that need restocking for your neighbourhood shop
+            Products that need restocking for your neighbourhood shop • सामान जो खत्म होने वाला है
           </Text>
         </View>
 
@@ -140,20 +142,20 @@ export const LowStockScreen: React.FC<LowStockScreenProps> = ({
         {!loading && items.length > 0 && (
           <View style={styles.summaryBar}>
             <Text style={styles.summaryTitle}>
-              {items.length} {items.length === 1 ? 'item needs' : 'items need'} attention
+              {items.length} {items.length === 1 ? 'item needs' : 'items need'} attention • ध्यान दें
             </Text>
             <View style={styles.summaryChipsRow}>
               {outOfStockCount > 0 && (
                 <View style={styles.summaryChipOut}>
                   <Text style={styles.summaryChipOutText}>
-                    {outOfStockCount} Out of Stock
+                    {outOfStockCount} Out of Stock / खत्म
                   </Text>
                 </View>
               )}
               {lowStockCount > 0 && (
                 <View style={styles.summaryChipLow}>
                   <Text style={styles.summaryChipLowText}>
-                    {lowStockCount} Low Stock
+                    {lowStockCount} Low Stock / कम स्टॉक
                   </Text>
                 </View>
               )}
@@ -172,16 +174,16 @@ export const LowStockScreen: React.FC<LowStockScreenProps> = ({
             <View style={styles.emptyIconCircle}>
               <Text style={styles.emptyIcon}>✅</Text>
             </View>
-            <Text style={styles.emptyTitle}>All stock looks good</Text>
+            <Text style={styles.emptyTitle}>All good! • सब ठीक है</Text>
             <Text style={styles.emptySubtitle}>
-              No items are currently below their low-stock alert threshold.
+              No products are currently low on stock. All items are above their alert threshold.
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={onNavigateToProducts}
               accessibilityRole="button"
             >
-              <Text style={styles.emptyButtonText}>View All Products</Text>
+              <Text style={styles.emptyButtonText}>{Strings.btnViewProducts}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -211,10 +213,12 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   header: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: Touch.minTarget,
+    justifyContent: 'center',
     paddingVertical: Spacing.xs,
     paddingRight: Spacing.sm,
     marginBottom: Spacing.xs,
@@ -222,24 +226,26 @@ const styles = StyleSheet.create({
   backButtonText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   title: {
     ...Typography.title,
     color: Colors.primaryDark,
+    fontSize: 24,
   },
   subtitle: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+    fontSize: 12,
   },
   summaryBar: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 1.5,
+    borderRadius: 12,
     padding: Spacing.md,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm + 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -250,6 +256,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontWeight: '700',
     color: Colors.textPrimary,
+    fontSize: 14,
   },
   summaryChipsRow: {
     flexDirection: 'row',
@@ -259,27 +266,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFEBEE',
     borderColor: '#FFCDD2',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 2,
+    borderRadius: 14,
+    paddingVertical: 3,
     paddingHorizontal: 8,
   },
   summaryChipOutText: {
     ...Typography.badge,
     color: Colors.error,
-    fontWeight: '700',
+    fontSize: 11,
   },
   summaryChipLow: {
     backgroundColor: '#FFF3E0',
     borderColor: '#FFE0B2',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 2,
+    borderRadius: 14,
+    paddingVertical: 3,
     paddingHorizontal: 8,
   },
   summaryChipLowText: {
     ...Typography.badge,
     color: Colors.warning,
-    fontWeight: '700',
+    fontSize: 11,
   },
   listContent: {
     paddingVertical: Spacing.xs,
@@ -319,6 +326,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     flex: 1,
     marginRight: Spacing.sm,
+    fontSize: 16,
   },
   statusBadge: {
     borderRadius: 6,
@@ -333,8 +341,8 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   statusBadgeTextOut: {
     color: Colors.textInverse,
@@ -355,11 +363,11 @@ const styles = StyleSheet.create({
   currentStockLabel: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   currentStockValue: {
     ...Typography.body,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.primaryDark,
     fontSize: 17,
     marginTop: 1,
@@ -373,13 +381,14 @@ const styles = StyleSheet.create({
   thresholdLabel: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   thresholdValue: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 1,
+    fontSize: 12,
   },
   centerContainer: {
     flex: 1,
@@ -416,6 +425,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primaryDark,
     marginBottom: Spacing.xs,
+    textAlign: 'center',
   },
   emptySubtitle: {
     ...Typography.body,
@@ -426,9 +436,11 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.buttonHeight,
     paddingHorizontal: Spacing.xl,
-    borderRadius: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyButtonText: {
     ...Typography.body,

@@ -12,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import { addProduct } from '../db';
 import { SUPPORTED_UNITS, SupportedUnit } from '../types';
 
@@ -35,29 +36,29 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
   const handleSave = async () => {
     const cleanName = name.trim();
     if (!cleanName) {
-      setErrorMessage('Product name cannot be empty');
+      setErrorMessage(Strings.valEnterName);
       return;
     }
 
     if (!quantity.trim()) {
-      setErrorMessage('Please enter initial quantity (e.g. 20 or 16.5)');
+      setErrorMessage(Strings.valEnterQty);
       return;
     }
 
     const numQuantity = parseFloat(quantity.trim());
     if (isNaN(numQuantity) || numQuantity < 0) {
-      setErrorMessage('Quantity cannot be negative and must be a valid number');
+      setErrorMessage(Strings.valEnterQty);
       return;
     }
 
     if (!lowStockThreshold.trim()) {
-      setErrorMessage('Please enter low-stock alert threshold (e.g. 5)');
+      setErrorMessage(Strings.valEnterThreshold);
       return;
     }
 
     const numThreshold = parseFloat(lowStockThreshold.trim());
     if (isNaN(numThreshold) || numThreshold < 0) {
-      setErrorMessage('Low stock threshold cannot be negative and must be a valid number');
+      setErrorMessage(Strings.valEnterThreshold);
       return;
     }
 
@@ -86,7 +87,10 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
@@ -95,11 +99,11 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Cancel and go back"
             >
-              <Text style={styles.backButtonText}>← Cancel</Text>
+              <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Add New Product</Text>
+            <Text style={styles.title}>{Strings.addProduct}</Text>
             <Text style={styles.subtitle}>
-              Add stock items to your offline inventory.
+              Add stock items to your offline inventory • नया सामान जोड़ें
             </Text>
           </View>
 
@@ -114,11 +118,11 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
           <View style={styles.formSection}>
             {/* Product Name */}
             <Text style={styles.label}>
-              Product Name <Text style={styles.required}>*</Text>
+              Product Name / सामान का नाम <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Chana Dal, Basmati Rice, Tata Salt"
+              placeholder="e.g. Basmati Rice, Chana Dal, Sugar"
               placeholderTextColor={Colors.textMuted}
               value={name}
               onChangeText={(text) => {
@@ -130,7 +134,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
 
             {/* Unit Selector */}
             <Text style={[styles.label, { marginTop: Spacing.lg }]}>
-              Unit of Measurement
+              Unit of Measurement / इकाई <Text style={styles.required}>*</Text>
             </Text>
             <View style={styles.unitContainer}>
               {SUPPORTED_UNITS.map((u) => {
@@ -157,7 +161,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
 
             {/* Quantity */}
             <Text style={[styles.label, { marginTop: Spacing.lg }]}>
-              Current Quantity ({unit}) <Text style={styles.required}>*</Text>
+              Initial Stock Quantity / मात्रा ({unit}) <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
@@ -176,7 +180,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
 
             {/* Low Stock Threshold */}
             <Text style={[styles.label, { marginTop: Spacing.lg }]}>
-              Low Stock Alert Below ({unit}) <Text style={styles.required}>*</Text>
+              Low Stock Alert Below / अलर्ट मात्रा ({unit}) <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
@@ -190,7 +194,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
               keyboardType="decimal-pad"
             />
             <Text style={styles.fieldHint}>
-              You will be notified when stock drops to or below this level
+              You will be alerted when stock reaches or drops below this level
             </Text>
           </View>
 
@@ -205,7 +209,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
             {saving ? (
               <ActivityIndicator color={Colors.textInverse} />
             ) : (
-              <Text style={styles.saveButtonText}>Save Product to Stock</Text>
+              <Text style={styles.saveButtonText}>{Strings.btnSaveProduct}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -224,31 +228,35 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
+    paddingTop: Spacing.md,
     paddingBottom: Spacing.xxl,
   },
   header: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: Touch.minTarget,
+    justifyContent: 'center',
     paddingVertical: Spacing.xs,
     paddingRight: Spacing.sm,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs,
   },
   backButtonText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   title: {
     ...Typography.title,
     color: Colors.primaryDark,
+    fontSize: 24,
   },
   subtitle: {
     ...Typography.body,
     color: Colors.textSecondary,
-    marginTop: Spacing.xs,
+    marginTop: 2,
+    fontSize: 13,
   },
   errorBanner: {
     backgroundColor: '#FFEBEE',
@@ -256,19 +264,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   errorText: {
     ...Typography.bodySmall,
     color: Colors.error,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   formSection: {
     marginBottom: Spacing.xl,
   },
   label: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
@@ -281,14 +289,15 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 8,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.inputHeight,
     ...Typography.body,
     color: Colors.textPrimary,
   },
   fieldHint: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
-    marginTop: Spacing.xs,
+    marginTop: 4,
+    fontSize: 12,
   },
   unitContainer: {
     flexDirection: 'row',
@@ -298,29 +307,30 @@ const styles = StyleSheet.create({
   unitChip: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: Spacing.sm,
+    borderWidth: 1.5,
+    borderRadius: 22,
+    minHeight: Touch.chipHeight,
     paddingHorizontal: Spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   unitChipSelected: {
     backgroundColor: Colors.primarySurface,
     borderColor: Colors.primary,
-    borderWidth: 1.5,
   },
   unitChipText: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   unitChipTextSelected: {
     color: Colors.primaryDark,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   saveButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md + 2,
-    borderRadius: 10,
+    minHeight: Touch.buttonHeight,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -333,7 +343,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
-    ...Typography.body,
+    ...Typography.subtitle,
     fontWeight: '700',
     color: Colors.textInverse,
   },

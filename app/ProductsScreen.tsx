@@ -9,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import { getLowStockProducts, getProducts, getSlowMovingProducts } from '../db';
 import { Product } from '../types';
 
@@ -85,21 +86,29 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
       >
         <View style={styles.productInfo}>
           <View style={styles.productNameRow}>
-            <Text style={styles.productName}>{item.name}</Text>
-            {isOutOfStock && (
-              <View style={styles.tagOut}>
-                <Text style={styles.tagOutText}>OUT</Text>
-              </View>
-            )}
-            {isLowStock && (
-              <View style={styles.tagLow}>
-                <Text style={styles.tagLowText}>LOW</Text>
-              </View>
-            )}
+            <Text style={styles.productName} numberOfLines={1}>
+              {item.name}
+            </Text>
           </View>
-          <Text style={styles.thresholdText}>
-            Alert below: {formattedThreshold} {item.unit}
-          </Text>
+
+          <View style={styles.statusRow}>
+            {isOutOfStock ? (
+              <View style={styles.badgeOut}>
+                <Text style={styles.badgeOutText}>{Strings.statusOutOfStock}</Text>
+              </View>
+            ) : isLowStock ? (
+              <View style={styles.badgeLow}>
+                <Text style={styles.badgeLowText}>{Strings.statusLowStock}</Text>
+              </View>
+            ) : (
+              <View style={styles.badgeIn}>
+                <Text style={styles.badgeInText}>{Strings.statusInStock}</Text>
+              </View>
+            )}
+            <Text style={styles.thresholdText}>
+              Alert below: {formattedThreshold} {item.unit}
+            </Text>
+          </View>
         </View>
 
         <View
@@ -145,14 +154,14 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Go back to Home"
           >
-            <Text style={styles.backButtonText}>← Home</Text>
+            <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerTitleRow}>
-            <View>
-              <Text style={styles.title}>Products & Stock</Text>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.title}>{Strings.products}</Text>
               <Text style={styles.subtitle}>
-                {products.length} {products.length === 1 ? 'item' : 'items'} in inventory
+                {products.length} {products.length === 1 ? 'item' : 'items'} in stock • दुकान का सामान
               </Text>
             </View>
 
@@ -164,7 +173,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                   accessibilityRole="button"
                   accessibilityLabel="Quick Sale"
                 >
-                  <Text style={styles.headerSaleButtonText}>⚡ Sale</Text>
+                  <Text style={styles.headerSaleButtonText}>⚡ Sale / बिक्री</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
@@ -173,13 +182,13 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Add Product"
               >
-                <Text style={styles.headerAddButtonText}>+ Add</Text>
+                <Text style={styles.headerAddButtonText}>+ Add / जोड़ें</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Quick Filter / Insights Links */}
-          {products.length > 0 && (
+          {products.length > 0 && (lowStockCount > 0 || slowMovingCount > 0) && (
             <View style={styles.insightsLinksRow}>
               {onNavigateToLowStock && lowStockCount > 0 && (
                 <TouchableOpacity
@@ -188,7 +197,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                   accessibilityRole="button"
                 >
                   <Text style={styles.filterChipLowText}>
-                    ⚠ {lowStockCount} Low Stock
+                    ⚠ {lowStockCount} Low Stock / कम स्टॉक
                   </Text>
                 </TouchableOpacity>
               )}
@@ -199,7 +208,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                   accessibilityRole="button"
                 >
                   <Text style={styles.filterChipSlowText}>
-                    🐌 {slowMovingCount} Slow-Moving
+                    🐌 {slowMovingCount} Slow Moving / धीमी बिक्री
                   </Text>
                 </TouchableOpacity>
               )}
@@ -211,16 +220,16 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading stock...</Text>
+            <Text style={styles.loadingText}>Loading stock • लोड हो रहा है...</Text>
           </View>
         ) : products.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
               <Text style={styles.emptyIcon}>📦</Text>
             </View>
-            <Text style={styles.emptyTitle}>No products added yet</Text>
+            <Text style={styles.emptyTitle}>No products added yet / कोई सामान नहीं</Text>
             <Text style={styles.emptySubtitle}>
-              Start adding your shop's stock items to keep track of inventory offline.
+              Start adding your shop's stock items to keep track of inventory completely offline.
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
@@ -228,7 +237,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Add First Product"
             >
-              <Text style={styles.emptyButtonText}>+ Add Your First Product</Text>
+              <Text style={styles.emptyButtonText}>{Strings.btnAddFirstProduct}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -262,98 +271,116 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: Touch.minTarget,
+    justifyContent: 'center',
     paddingVertical: Spacing.xs,
     paddingRight: Spacing.sm,
-    marginBottom: Spacing.xs,
   },
   backButtonText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   headerTitleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  headerTextContainer: {
+    flex: 1,
+    marginRight: Spacing.xs,
+  },
   title: {
     ...Typography.title,
     color: Colors.primaryDark,
+    fontSize: 24,
   },
   subtitle: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+    fontSize: 12,
   },
   headerActions: {
     flexDirection: 'row',
-    gap: Spacing.xs + 2,
+    gap: Spacing.xs,
     alignItems: 'center',
   },
   headerSaleButton: {
     backgroundColor: Colors.primaryDark,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    minHeight: 40,
+    paddingHorizontal: Spacing.sm + 4,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerSaleButtonText: {
     ...Typography.bodySmall,
     fontWeight: '700',
     color: Colors.textInverse,
+    fontSize: 12,
   },
   headerAddButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.sm,
-    paddingHorizontal: Spacing.md,
+    minHeight: 40,
+    paddingHorizontal: Spacing.sm + 4,
     borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   headerAddButtonText: {
     ...Typography.bodySmall,
     fontWeight: '700',
     color: Colors.textInverse,
+    fontSize: 12,
   },
   insightsLinksRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.xs + 2,
     marginTop: Spacing.sm,
   },
   filterChipLow: {
     backgroundColor: '#FFF3E0',
     borderColor: '#FFE0B2',
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.sm + 4,
   },
   filterChipLowText: {
     ...Typography.badge,
     color: Colors.warning,
-    fontSize: 12,
+    fontSize: 11,
   },
   filterChipSlow: {
     backgroundColor: '#EDE7F6',
     borderColor: '#D1C4E9',
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 3,
-    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderRadius: 16,
+    minHeight: 34,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.sm + 4,
   },
   filterChipSlowText: {
     ...Typography.badge,
-    color: '#5E35B1',
-    fontSize: 12,
+    color: Colors.purple,
+    fontSize: 11,
   },
   listContent: {
     paddingVertical: Spacing.sm,
     paddingBottom: Spacing.xxl,
   },
   separator: {
-    height: Spacing.sm + 4,
+    height: Spacing.sm,
   },
   productCard: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 12,
     padding: Spacing.md,
     flexDirection: 'row',
@@ -386,40 +413,65 @@ const styles = StyleSheet.create({
     ...Typography.subtitle,
     color: Colors.textPrimary,
     fontWeight: '700',
+    fontSize: 16,
   },
-  tagOut: {
-    backgroundColor: Colors.error,
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: Spacing.xs,
+    marginTop: 4,
+  },
+  badgeOut: {
+    backgroundColor: '#FFEBEE',
+    borderColor: '#FFCDD2',
+    borderWidth: 1,
     borderRadius: 4,
     paddingVertical: 1,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
   },
-  tagOutText: {
-    color: Colors.textInverse,
+  badgeOutText: {
+    color: Colors.error,
     fontSize: 10,
     fontWeight: '800',
   },
-  tagLow: {
-    backgroundColor: Colors.warning,
+  badgeLow: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FFE0B2',
+    borderWidth: 1,
     borderRadius: 4,
     paddingVertical: 1,
-    paddingHorizontal: 5,
+    paddingHorizontal: 6,
   },
-  tagLowText: {
-    color: Colors.textInverse,
+  badgeLowText: {
+    color: Colors.warning,
     fontSize: 10,
     fontWeight: '800',
+  },
+  badgeIn: {
+    backgroundColor: Colors.primarySurface,
+    borderColor: Colors.accentLight,
+    borderWidth: 1,
+    borderRadius: 4,
+    paddingVertical: 1,
+    paddingHorizontal: 6,
+  },
+  badgeInText: {
+    color: Colors.primaryDark,
+    fontSize: 10,
+    fontWeight: '700',
   },
   thresholdText: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
-    marginTop: 4,
+    fontSize: 11,
   },
   stockBadge: {
     backgroundColor: Colors.primarySurface,
     borderColor: Colors.accentLight,
     borderWidth: 1,
     borderRadius: 10,
-    paddingVertical: Spacing.xs + 2,
+    paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     alignItems: 'center',
     minWidth: 70,
@@ -433,8 +485,8 @@ const styles = StyleSheet.create({
     borderColor: '#FFE0B2',
   },
   stockQuantity: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 19,
+    fontWeight: '800',
     color: Colors.primaryDark,
   },
   stockQuantityOut: {
@@ -483,6 +535,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
+    textAlign: 'center',
   },
   emptySubtitle: {
     ...Typography.body,
@@ -493,9 +546,11 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.buttonHeight,
     paddingHorizontal: Spacing.xl,
-    borderRadius: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

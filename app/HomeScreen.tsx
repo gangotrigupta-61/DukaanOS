@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { OfflineBadge } from '../components';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import {
   getDatabase,
   getInventoryInsights,
@@ -71,20 +72,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
       <ScrollView contentContainerStyle={styles.container}>
         {/* Header Block */}
         <View style={styles.headerBlock}>
-          <Text style={styles.appName}>DukaanOS</Text>
-          <Text style={styles.subtitle}>Simple stock management for your shop</Text>
-          <View style={styles.badgeWrapper}>
-            <OfflineBadge />
+          <View style={styles.brandRow}>
+            <Text style={styles.appName}>{Strings.appName}</Text>
+            <OfflineBadge compact />
           </View>
+          <Text style={styles.subtitle}>{Strings.taglineBilingual}</Text>
         </View>
 
         {/* Shop Info Card */}
         {shop ? (
           <View style={styles.shopCard}>
             <View style={styles.shopInfoRow}>
-              <View>
-                <Text style={styles.shopGreeting}>Active Store</Text>
-                <Text style={styles.shopTitle}>{shop.shop_name}</Text>
+              <View style={styles.shopTextContainer}>
+                <Text style={styles.shopGreeting}>Active Store • दुकान</Text>
+                <Text style={styles.shopTitle} numberOfLines={1}>
+                  {shop.shop_name}
+                </Text>
                 <Text style={styles.shopDetails}>
                   {shop.shop_type} •{' '}
                   {shop.language === 'hi'
@@ -100,7 +103,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                 accessibilityRole="button"
                 accessibilityLabel="Edit shop details"
               >
-                <Text style={styles.editShopButtonText}>Edit</Text>
+                <Text style={styles.editShopButtonText}>{Strings.editShop}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -111,8 +114,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             accessibilityRole="button"
             accessibilityLabel="Setup shop now"
           >
-            <View>
-              <Text style={styles.setupBannerTitle}>Setup Your Shop</Text>
+            <View style={styles.setupBannerText}>
+              <Text style={styles.setupBannerTitle}>Setup Your Shop / दुकान जोड़ें</Text>
               <Text style={styles.setupBannerSubtitle}>
                 Add your shop name and preferences to personalize DukaanOS
               </Text>
@@ -121,9 +124,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
           </TouchableOpacity>
         )}
 
-        {/* Phase 4 Core Inventory Insights */}
+        {/* Phase 4 & 5 Core Inventory Health Cards */}
         <View style={styles.insightsSection}>
-          <Text style={styles.sectionHeader}>Inventory Health & Insights</Text>
+          <Text style={styles.sectionHeader}>Inventory Health • स्टॉक की स्थिति</Text>
 
           <View style={styles.insightsGrid}>
             {/* Low Stock Card */}
@@ -138,23 +141,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             >
               <View style={styles.insightHeaderRow}>
                 <Text style={styles.insightIcon}>⚠</Text>
-                <Text
+                <View
                   style={[
-                    styles.insightBadgeCount,
+                    styles.insightCountPill,
                     totalAttentionCount > 0
-                      ? styles.insightBadgeCountAlert
-                      : styles.insightBadgeCountHealthy,
+                      ? styles.insightCountPillAlert
+                      : styles.insightCountPillHealthy,
                   ]}
                 >
-                  {totalAttentionCount}
-                </Text>
+                  <Text
+                    style={[
+                      styles.insightBadgeCount,
+                      totalAttentionCount > 0
+                        ? styles.insightBadgeCountAlert
+                        : styles.insightBadgeCountHealthy,
+                    ]}
+                  >
+                    {totalAttentionCount}
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.insightCardTitle}>Low Stock</Text>
+              <Text style={styles.insightCardTitle}>Low Stock / कम स्टॉक</Text>
               <Text style={styles.insightCardSubtitle}>
                 {totalAttentionCount === 0
-                  ? 'All stock looks good'
+                  ? 'All stock healthy • सब पर्याप्त'
                   : insights?.outOfStockCount
-                  ? `${insights.outOfStockCount} out • ${insights.lowStockCount} low`
+                  ? `${insights.outOfStockCount} Out • ${insights.lowStockCount} Low`
                   : `${totalAttentionCount} items need restock`}
               </Text>
             </TouchableOpacity>
@@ -171,32 +183,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             >
               <View style={styles.insightHeaderRow}>
                 <Text style={styles.insightIcon}>🐌</Text>
-                <Text
+                <View
                   style={[
-                    styles.insightBadgeCount,
+                    styles.insightCountPill,
                     totalSlowCount > 0
-                      ? styles.insightBadgeCountSlow
-                      : styles.insightBadgeCountHealthy,
+                      ? styles.insightCountPillSlow
+                      : styles.insightCountPillHealthy,
                   ]}
                 >
-                  {totalSlowCount}
-                </Text>
+                  <Text
+                    style={[
+                      styles.insightBadgeCount,
+                      totalSlowCount > 0
+                        ? styles.insightBadgeCountSlow
+                        : styles.insightBadgeCountHealthy,
+                    ]}
+                  >
+                    {totalSlowCount}
+                  </Text>
+                </View>
               </View>
-              <Text style={styles.insightCardTitle}>Slow Moving</Text>
+              <Text style={styles.insightCardTitle}>Slow Moving / धीमी बिक्री</Text>
               <Text style={styles.insightCardSubtitle}>
                 {totalSlowCount === 0
-                  ? 'Active movement'
+                  ? 'Active movement • सब बिक रहा'
                   : insights?.neverSoldCount
-                  ? `${insights.neverSoldCount} never sold • ${insights.slowMovingCount} inactive`
+                  ? `${insights.neverSoldCount} Never Sold • ${insights.slowMovingCount} Slow`
                   : `${totalSlowCount} inactive (30+ days)`}
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Core Shopkeeper Actions */}
+        {/* Primary Shopkeeper Actions */}
         <View style={styles.actionsSection}>
-          <Text style={styles.sectionHeader}>Quick Actions</Text>
+          <Text style={styles.sectionHeader}>Quick Actions • मुख्य कार्य</Text>
 
           {/* Quick Sale Hero Button */}
           <TouchableOpacity
@@ -209,9 +230,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
               <Text style={styles.heroSaleIcon}>⚡</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.heroSaleTitle}>Quick Sale</Text>
+              <Text style={styles.heroSaleTitle}>{Strings.quickSale}</Text>
               <Text style={styles.heroSaleSubtitle}>
-                Record sale and automatically decrease stock
+                Instant sale with automatic stock deduction • तुरंत बिक्री
               </Text>
             </View>
             <Text style={styles.heroSaleArrow}>→</Text>
@@ -228,11 +249,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
               <Text style={styles.actionIcon}>📦</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>Products & Stock</Text>
+              <Text style={styles.actionTitle}>{Strings.products}</Text>
               <Text style={styles.actionSubtitle}>
                 {productCount === 0
-                  ? 'No items added yet'
-                  : `${productCount} ${productCount === 1 ? 'item' : 'items'} in inventory`}
+                  ? 'No items added yet • कोई सामान नहीं'
+                  : `${productCount} ${productCount === 1 ? 'item' : 'items'} in inventory • स्टॉक देखें`}
               </Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
@@ -249,43 +270,41 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
               <Text style={styles.actionIcon}>➕</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitleSecondary}>Add New Product</Text>
+              <Text style={styles.actionTitleSecondary}>{Strings.addProduct}</Text>
               <Text style={styles.actionSubtitle}>
-                Record product name, stock quantity, and alert levels
+                Add stock items with alert threshold • नया सामान जोड़ें
               </Text>
             </View>
             <Text style={styles.actionArrowSecondary}>→</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Phase 1 System Foundation Card (Preserved) */}
+        {/* Offline & System Foundation Card (Preserved from Phase 1) */}
         <View style={styles.card}>
-          <Text style={styles.cardHeader}>System Foundation</Text>
+          <Text style={styles.cardHeader}>Local Offline Storage • स्थानीय स्टोरेज</Text>
 
           {isLoading ? (
             <View style={styles.statusRow}>
               <ActivityIndicator size="small" color={Colors.primary} />
-              <Text style={styles.statusText}>Initializing local database...</Text>
+              <Text style={styles.statusText}>Connecting to local database...</Text>
             </View>
           ) : initResult?.success ? (
             <View>
               <View style={styles.statusRow}>
                 <View style={styles.statusIndicatorSuccess} />
                 <Text style={styles.statusTextSuccess}>
-                  Local SQLite storage active
+                  Local SQLite storage active (बिना इंटरनेट सुरक्षित)
                 </Text>
               </View>
               <Text style={styles.detailsText}>
-                Verified tables:{' '}
-                {initResult.tables.join(', ') || 'products, sales, shops'}
+                Verified tables: {initResult.tables.join(', ') || 'products, sales, shops'}
               </Text>
             </View>
           ) : (
             <View style={styles.statusRow}>
               <View style={styles.statusIndicatorError} />
               <Text style={styles.statusTextError}>
-                Storage initialization error:{' '}
-                {initResult?.error || 'Unknown error'}
+                Storage error: {initResult?.error || 'Unknown error'}
               </Text>
             </View>
           )}
@@ -294,7 +313,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         {/* Footer info */}
         <View style={styles.footer}>
           <Text style={styles.footerNote}>
-            DukaanOS Phase 4 • Low Stock & Slow-Moving Insights Ready
+            DukaanOS • Designed for Indian Small Retailers
           </Text>
         </View>
       </ScrollView>
@@ -309,33 +328,34 @@ const styles = StyleSheet.create({
   },
   container: {
     paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.xl,
+    paddingTop: Spacing.lg,
     paddingBottom: Spacing.xxl,
   },
   headerBlock: {
-    gap: Spacing.xs,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
+  },
+  brandRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
   },
   appName: {
     ...Typography.title,
     color: Colors.primaryDark,
   },
   subtitle: {
-    ...Typography.subtitle,
+    ...Typography.bodySmall,
     color: Colors.textSecondary,
-    marginTop: Spacing.xs,
-    marginBottom: Spacing.md,
-  },
-  badgeWrapper: {
-    marginTop: Spacing.xs,
+    fontSize: 13,
   },
   shopCard: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 12,
-    padding: Spacing.md + 2,
-    marginBottom: Spacing.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
@@ -347,12 +367,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  shopTextContainer: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
   shopGreeting: {
     ...Typography.bodySmall,
     color: Colors.primaryLight,
-    fontWeight: '600',
+    fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontSize: 11,
   },
   shopTitle: {
     ...Typography.subtitle,
@@ -364,28 +389,39 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+    fontSize: 12,
   },
   editShopButton: {
-    paddingVertical: Spacing.xs,
-    paddingHorizontal: Spacing.md,
-    borderRadius: 6,
+    minHeight: 38,
+    minWidth: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.sm + 2,
+    borderRadius: 8,
     backgroundColor: Colors.primarySurface,
+    borderColor: Colors.accentLight,
+    borderWidth: 1,
   },
   editShopButtonText: {
     ...Typography.bodySmall,
     color: Colors.primaryDark,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 12,
   },
   setupBanner: {
     backgroundColor: Colors.primarySurface,
     borderColor: Colors.accentLight,
     borderWidth: 1.5,
     borderRadius: 12,
-    padding: Spacing.md + 4,
-    marginBottom: Spacing.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  setupBannerText: {
+    flex: 1,
+    marginRight: Spacing.sm,
   },
   setupBannerTitle: {
     ...Typography.subtitle,
@@ -396,7 +432,6 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
-    maxWidth: 260,
   },
   setupBannerArrow: {
     fontSize: 24,
@@ -404,25 +439,28 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   insightsSection: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   sectionHeader: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.xs + 2,
     fontWeight: '700',
+    fontSize: 12,
   },
   insightsGrid: {
     flexDirection: 'row',
-    gap: Spacing.sm + 2,
+    gap: Spacing.sm,
   },
   insightCard: {
     flex: 1,
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: Spacing.md,
+    minHeight: 90,
+    justifyContent: 'space-between',
     borderWidth: 1.5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -450,8 +488,22 @@ const styles = StyleSheet.create({
   insightIcon: {
     fontSize: 20,
   },
+  insightCountPill: {
+    borderRadius: 12,
+    paddingVertical: 2,
+    paddingHorizontal: 8,
+  },
+  insightCountPillAlert: {
+    backgroundColor: '#FFEBEE',
+  },
+  insightCountPillSlow: {
+    backgroundColor: '#FFF3E0',
+  },
+  insightCountPillHealthy: {
+    backgroundColor: Colors.primarySurface,
+  },
   insightBadgeCount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '800',
   },
   insightBadgeCountAlert: {
@@ -467,23 +519,26 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontWeight: '700',
     color: Colors.textPrimary,
+    fontSize: 14,
   },
   insightCardSubtitle: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
-    fontSize: 12,
+    fontSize: 11,
   },
   actionsSection: {
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   heroSaleButton: {
     backgroundColor: Colors.primaryDark,
     borderRadius: 12,
-    padding: Spacing.md + 2,
+    minHeight: Touch.buttonHeight + 8,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm + 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -500,18 +555,18 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   heroSaleIcon: {
-    fontSize: 24,
+    fontSize: 22,
   },
   heroSaleTitle: {
-    ...Typography.body,
+    ...Typography.subtitle,
     fontWeight: '700',
     color: Colors.textInverse,
-    fontSize: 18,
   },
   heroSaleSubtitle: {
     ...Typography.bodySmall,
     color: Colors.accentLight,
     marginTop: 2,
+    fontSize: 12,
   },
   heroSaleArrow: {
     fontSize: 22,
@@ -524,10 +579,12 @@ const styles = StyleSheet.create({
     borderColor: Colors.borderStrong,
     borderWidth: 1.5,
     borderRadius: 12,
-    padding: Spacing.md,
+    minHeight: Touch.buttonHeight,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 4,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm + 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -537,9 +594,11 @@ const styles = StyleSheet.create({
   secondaryActionButton: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 12,
-    padding: Spacing.md,
+    minHeight: Touch.buttonHeight,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm + 4,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
@@ -549,8 +608,8 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   actionIconContainer: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: 10,
     backgroundColor: Colors.primarySurface,
     alignItems: 'center',
@@ -558,8 +617,8 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   actionIconContainerSecondary: {
-    width: 44,
-    height: 44,
+    width: 42,
+    height: 42,
     borderRadius: 10,
     backgroundColor: Colors.surfaceMuted,
     alignItems: 'center',
@@ -567,7 +626,7 @@ const styles = StyleSheet.create({
     marginRight: Spacing.md,
   },
   actionIcon: {
-    fontSize: 22,
+    fontSize: 20,
   },
   actionTextContainer: {
     flex: 1,
@@ -586,6 +645,7 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+    fontSize: 12,
   },
   actionArrow: {
     fontSize: 20,
@@ -602,7 +662,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 12,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     borderWidth: 1,
     borderColor: Colors.border,
     shadowColor: '#000000',
@@ -610,14 +670,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 3,
     elevation: 1,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   cardHeader: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.xs,
+    fontSize: 11,
   },
   statusRow: {
     flexDirection: 'row',
@@ -625,35 +686,35 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   statusIndicatorSuccess: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.success,
   },
   statusIndicatorError: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: Colors.error,
   },
   statusText: {
-    ...Typography.body,
+    ...Typography.bodySmall,
     color: Colors.textPrimary,
   },
   statusTextSuccess: {
-    ...Typography.body,
+    ...Typography.bodySmall,
     fontWeight: '600',
     color: Colors.primaryDark,
   },
   statusTextError: {
-    ...Typography.body,
+    ...Typography.bodySmall,
     color: Colors.error,
   },
   detailsText: {
-    ...Typography.bodySmall,
-    color: Colors.textSecondary,
-    marginTop: Spacing.xs,
-    marginLeft: Spacing.md + 2,
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 2,
+    marginLeft: Spacing.md,
   },
   footer: {
     alignItems: 'center',
@@ -662,5 +723,6 @@ const styles = StyleSheet.create({
   footerNote: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
+    fontSize: 12,
   },
 });

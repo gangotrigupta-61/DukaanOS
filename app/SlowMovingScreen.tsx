@@ -9,7 +9,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import { getSlowMovingProducts } from '../db';
 import { SlowMovingItem } from '../types';
 
@@ -21,7 +22,6 @@ interface SlowMovingScreenProps {
 
 export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
   onBack,
-  onNavigateToQuickSale,
   onNavigateToProducts,
 }) => {
   const [items, setItems] = useState<SlowMovingItem[]>([]);
@@ -65,7 +65,9 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
         ]}
       >
         <View style={styles.itemHeaderRow}>
-          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemName} numberOfLines={1}>
+            {item.name}
+          </Text>
           <View
             style={[
               styles.statusBadge,
@@ -82,26 +84,26 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
                   : styles.statusBadgeTextSlow,
               ]}
             >
-              {item.is_never_sold ? 'NEVER SOLD' : 'SLOW MOVING'}
+              {item.is_never_sold ? Strings.statusNeverSold : Strings.statusSlowMoving}
             </Text>
           </View>
         </View>
 
         <View style={styles.itemDetailsRow}>
           <View style={styles.stockInfo}>
-            <Text style={styles.detailLabel}>Current Stock:</Text>
+            <Text style={styles.detailLabel}>Current Stock / स्टॉक:</Text>
             <Text style={styles.stockValue}>
               {formattedQty} {item.unit}
             </Text>
           </View>
 
           <View style={styles.movementInfo}>
-            <Text style={styles.detailLabel}>Sales Activity:</Text>
+            <Text style={styles.detailLabel}>Sales Activity / बिक्री स्थिति:</Text>
             {item.is_never_sold ? (
-              <Text style={styles.neverSoldText}>No sales recorded yet</Text>
+              <Text style={styles.neverSoldText}>No sales recorded yet (कभी नहीं बिका)</Text>
             ) : (
               <Text style={styles.slowMovingText}>
-                Last sold: {item.days_since_last_sale} days ago
+                Last sold: {item.days_since_last_sale} days ago ({item.days_since_last_sale} दिन पहले)
               </Text>
             )}
           </View>
@@ -122,12 +124,12 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
             accessibilityRole="button"
             accessibilityLabel="Back to Home"
           >
-            <Text style={styles.backButtonText}>← Home</Text>
+            <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>Slow-Moving Stock</Text>
+          <Text style={styles.title}>{Strings.slowMoving}</Text>
           <Text style={styles.subtitle}>
-            Products with no sales recorded in the last 30+ days or never sold
+            Products with no sales recorded in the last 30+ days or never sold • सामान जो नहीं बिक रहा
           </Text>
         </View>
 
@@ -135,13 +137,13 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
         {!loading && items.length > 0 && (
           <View style={styles.summaryBar}>
             <Text style={styles.summaryTitle}>
-              {items.length} {items.length === 1 ? 'product needs' : 'products need'} attention
+              {items.length} {items.length === 1 ? 'product needs' : 'products need'} movement • ध्यान दें
             </Text>
             <View style={styles.summaryChipsRow}>
               {neverSoldCount > 0 && (
                 <View style={styles.summaryChipNever}>
                   <Text style={styles.summaryChipNeverText}>
-                    {neverSoldCount} Never Sold
+                    {neverSoldCount} Never Sold / कभी नहीं बिका
                   </Text>
                 </View>
               )}
@@ -167,16 +169,16 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
             <View style={styles.emptyIconCircle}>
               <Text style={styles.emptyIcon}>🚀</Text>
             </View>
-            <Text style={styles.emptyTitle}>All products are moving actively!</Text>
+            <Text style={styles.emptyTitle}>All products are moving! • सब सामान बिक रहा है</Text>
             <Text style={styles.emptySubtitle}>
-              Great job! Every product in your store has recorded sales within the last 30 days.
+              Great news! Every product in your store has recorded sales within the last 30 days.
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={onNavigateToProducts}
               accessibilityRole="button"
             >
-              <Text style={styles.emptyButtonText}>View All Products</Text>
+              <Text style={styles.emptyButtonText}>{Strings.btnViewProducts}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -206,10 +208,12 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   header: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: Touch.minTarget,
+    justifyContent: 'center',
     paddingVertical: Spacing.xs,
     paddingRight: Spacing.sm,
     marginBottom: Spacing.xs,
@@ -217,24 +221,26 @@ const styles = StyleSheet.create({
   backButtonText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   title: {
     ...Typography.title,
     color: Colors.primaryDark,
+    fontSize: 24,
   },
   subtitle: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+    fontSize: 12,
   },
   summaryBar: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
-    borderRadius: 10,
+    borderWidth: 1.5,
+    borderRadius: 12,
     padding: Spacing.md,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm + 4,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -245,6 +251,7 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontWeight: '700',
     color: Colors.textPrimary,
+    fontSize: 14,
   },
   summaryChipsRow: {
     flexDirection: 'row',
@@ -254,27 +261,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#EDE7F6',
     borderColor: '#D1C4E9',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 2,
+    borderRadius: 14,
+    paddingVertical: 3,
     paddingHorizontal: 8,
   },
   summaryChipNeverText: {
     ...Typography.badge,
-    color: '#5E35B1',
-    fontWeight: '700',
+    color: Colors.purple,
+    fontSize: 11,
   },
   summaryChipSlow: {
     backgroundColor: '#FFF3E0',
     borderColor: '#FFE0B2',
     borderWidth: 1,
-    borderRadius: 12,
-    paddingVertical: 2,
+    borderRadius: 14,
+    paddingVertical: 3,
     paddingHorizontal: 8,
   },
   summaryChipSlowText: {
     ...Typography.badge,
     color: Colors.warning,
-    fontWeight: '700',
+    fontSize: 11,
   },
   listContent: {
     paddingVertical: Spacing.xs,
@@ -314,6 +321,7 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
     flex: 1,
     marginRight: Spacing.sm,
+    fontSize: 16,
   },
   statusBadge: {
     borderRadius: 6,
@@ -321,15 +329,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   statusBadgeNever: {
-    backgroundColor: '#673AB7',
+    backgroundColor: Colors.purple,
   },
   statusBadgeSlow: {
     backgroundColor: Colors.warning,
   },
   statusBadgeText: {
     fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
   statusBadgeTextNever: {
     color: Colors.textInverse,
@@ -350,11 +358,11 @@ const styles = StyleSheet.create({
   detailLabel: {
     ...Typography.bodySmall,
     color: Colors.textMuted,
-    fontSize: 12,
+    fontSize: 11,
   },
   stockValue: {
     ...Typography.body,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.primaryDark,
     fontSize: 16,
     marginTop: 1,
@@ -364,15 +372,17 @@ const styles = StyleSheet.create({
   },
   neverSoldText: {
     ...Typography.bodySmall,
-    color: '#673AB7',
+    color: Colors.purple,
     fontWeight: '700',
     marginTop: 1,
+    fontSize: 12,
   },
   slowMovingText: {
     ...Typography.bodySmall,
     color: Colors.warning,
     fontWeight: '700',
     marginTop: 1,
+    fontSize: 12,
   },
   centerContainer: {
     flex: 1,
@@ -409,6 +419,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.primaryDark,
     marginBottom: Spacing.xs,
+    textAlign: 'center',
   },
   emptySubtitle: {
     ...Typography.body,
@@ -419,9 +430,11 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.buttonHeight,
     paddingHorizontal: Spacing.xl,
-    borderRadius: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyButtonText: {
     ...Typography.body,

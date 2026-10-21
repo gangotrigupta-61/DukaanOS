@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -13,7 +12,8 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Colors, Spacing, Typography } from '../constants/theme';
+import { Colors, Spacing, Touch, Typography } from '../constants/theme';
+import { Strings } from '../constants/strings';
 import { getProducts, recordSale } from '../db';
 import { Product, RecordSaleResult } from '../types';
 
@@ -59,7 +59,9 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
 
   const handleSelectProduct = (product: Product) => {
     if (product.quantity <= 0) {
-      setErrorMessage(`"${product.name}" is out of stock (0 ${product.unit} available).`);
+      setErrorMessage(
+        `"${product.name}" is out of stock (0 ${product.unit} available) • स्टॉक खत्म है`
+      );
       return;
     }
     setSelectedProduct(product);
@@ -70,25 +72,25 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
 
   const handleRecordSale = async () => {
     if (!selectedProduct) {
-      setErrorMessage('Please select a product to sell');
+      setErrorMessage('Please select a product to sell • सामान चुनें');
       return;
     }
 
     const trimmedQty = saleQuantity.trim();
     if (!trimmedQty) {
-      setErrorMessage('Please enter the sale quantity');
+      setErrorMessage(Strings.valEnterQty);
       return;
     }
 
     const numQty = parseFloat(trimmedQty);
     if (isNaN(numQty) || numQty <= 0) {
-      setErrorMessage('Quantity must be greater than 0');
+      setErrorMessage(Strings.valQtyPositive);
       return;
     }
 
     if (numQty > selectedProduct.quantity) {
       setErrorMessage(
-        `Not enough stock. Available: ${selectedProduct.quantity} ${selectedProduct.unit}`
+        `Not enough stock • केवल ${selectedProduct.quantity} ${selectedProduct.unit} उपलब्ध है`
       );
       return;
     }
@@ -137,7 +139,10 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity
@@ -146,14 +151,14 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Back to previous screen"
             >
-              <Text style={styles.backButtonText}>← Back</Text>
+              <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
             </TouchableOpacity>
 
             <View style={styles.headerTitleRow}>
               <View>
-                <Text style={styles.title}>Quick Sale</Text>
+                <Text style={styles.title}>{Strings.quickSale}</Text>
                 <Text style={styles.subtitle}>
-                  Select product, enter quantity, record sale
+                  Select product, enter quantity, record sale • तुरंत बिक्री
                 </Text>
               </View>
               <View style={styles.badgeOffline}>
@@ -167,14 +172,14 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
             <View style={styles.successBanner}>
               <View style={styles.successHeaderRow}>
                 <Text style={styles.successIcon}>✅</Text>
-                <Text style={styles.successTitle}>Sale Recorded Successfully!</Text>
+                <Text style={styles.successTitle}>Sale Recorded • बिक्री दर्ज हुई!</Text>
               </View>
               <Text style={styles.successDetails}>
                 Sold <Text style={styles.boldText}>{lastSaleResult.sale.quantity} {lastSaleResult.product.unit}</Text> of{' '}
                 <Text style={styles.boldText}>{lastSaleResult.product.name}</Text>
               </Text>
               <Text style={styles.successRemaining}>
-                Remaining stock:{' '}
+                Remaining stock / बचा हुआ स्टॉक:{' '}
                 <Text style={styles.boldText}>
                   {lastSaleResult.remaining_quantity} {lastSaleResult.product.unit}
                 </Text>
@@ -186,7 +191,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                   onPress={onNavigateToProducts}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.viewProductsButtonText}>View Products List →</Text>
+                  <Text style={styles.viewProductsButtonText}>{Strings.btnViewProducts}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -210,7 +215,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               <View style={styles.emptyIconCircle}>
                 <Text style={styles.emptyIcon}>📦</Text>
               </View>
-              <Text style={styles.emptyTitle}>No products available</Text>
+              <Text style={styles.emptyTitle}>No products available / कोई सामान नहीं</Text>
               <Text style={styles.emptySubtitle}>
                 You need to add products to your stock before you can record sales.
               </Text>
@@ -220,7 +225,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Add Product"
               >
-                <Text style={styles.emptyButtonText}>+ Add Product Now</Text>
+                <Text style={styles.emptyButtonText}>{Strings.btnAddFirstProduct}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -228,7 +233,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               {/* Step 1: Select Product */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  1. Select Product {selectedProduct && `(Selected: ${selectedProduct.name})`}
+                  1. Select Product / सामान चुनें {selectedProduct && `(${selectedProduct.name})`}
                 </Text>
                 <View style={styles.productsList}>
                   {products.map((p) => {
@@ -257,7 +262,9 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                             {p.name}
                           </Text>
                           {isOutOfStock ? (
-                            <Text style={styles.outOfStockText}>Out of stock</Text>
+                            <Text style={styles.outOfStockText}>
+                              {Strings.statusOutOfStock}
+                            </Text>
                           ) : (
                             <Text style={styles.thresholdSubtext}>
                               Alert below: {p.low_stock_threshold} {p.unit}
@@ -303,7 +310,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               {selectedProduct && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>
-                    2. Enter Sale Quantity ({selectedProduct.unit})
+                    2. Enter Quantity / बिक्री मात्रा ({selectedProduct.unit})
                   </Text>
 
                   <View style={styles.quantityCard}>
@@ -312,15 +319,15 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         {selectedProduct.name}
                       </Text>
                       <Text style={styles.selectedProductStock}>
-                        In Stock:{' '}
+                        In Stock / उपलब्ध:{' '}
                         <Text style={styles.boldText}>
                           {selectedProduct.quantity} {selectedProduct.unit}
                         </Text>
                       </Text>
                     </View>
 
-                    {/* Quick Preset Buttons for Kirana fast entry */}
-                    <Text style={styles.presetLabel}>Quick Presets:</Text>
+                    {/* Quick Preset Buttons for fast Kirana mobile entry */}
+                    <Text style={styles.presetLabel}>Quick Presets / तुरंत मात्रा:</Text>
                     <View style={styles.presetsRow}>
                       {[0.5, 1, 2, 5].map((preset) => (
                         <TouchableOpacity
@@ -340,14 +347,14 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         accessibilityRole="button"
                       >
                         <Text style={styles.presetChipAllText}>
-                          All ({selectedProduct.quantity})
+                          All / पूरा ({selectedProduct.quantity})
                         </Text>
                       </TouchableOpacity>
                     </View>
 
                     {/* Numeric Input */}
                     <Text style={styles.inputLabel}>
-                      Quantity Sold ({selectedProduct.unit}) <Text style={styles.required}>*</Text>
+                      Quantity Sold / बेची गई मात्रा ({selectedProduct.unit}) <Text style={styles.required}>*</Text>
                     </Text>
                     <TextInput
                       style={[styles.input, isOverStock && styles.inputError]}
@@ -359,7 +366,6 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         if (errorMessage) setErrorMessage(null);
                       }}
                       keyboardType="decimal-pad"
-                      autoFocus={false}
                     />
 
                     {/* Live Confirmation Summary Box */}
@@ -370,15 +376,15 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                           isOverStock ? styles.summaryBoxError : styles.summaryBoxValid,
                         ]}
                       >
-                        <Text style={styles.summaryTitle}>Sale Summary</Text>
+                        <Text style={styles.summaryTitle}>Sale Summary / बिक्री सारांश</Text>
 
                         <View style={styles.summaryRow}>
-                          <Text style={styles.summaryLabel}>Product:</Text>
+                          <Text style={styles.summaryLabel}>Product / सामान:</Text>
                           <Text style={styles.summaryValue}>{selectedProduct.name}</Text>
                         </View>
 
                         <View style={styles.summaryRow}>
-                          <Text style={styles.summaryLabel}>Sold:</Text>
+                          <Text style={styles.summaryLabel}>Sold / बिक्री:</Text>
                           <Text
                             style={[
                               styles.summaryValue,
@@ -390,7 +396,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         </View>
 
                         <View style={styles.summaryRow}>
-                          <Text style={styles.summaryLabel}>Remaining:</Text>
+                          <Text style={styles.summaryLabel}>Remaining / बाकी बचेगा:</Text>
                           {isOverStock ? (
                             <Text style={styles.summaryValueNegative}>
                               Not enough stock (Short by{' '}
@@ -427,7 +433,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         <ActivityIndicator color={Colors.textInverse} />
                       ) : (
                         <Text style={styles.recordButtonText}>
-                          Record Sale ({parsedQty || 0} {selectedProduct.unit})
+                          {Strings.btnRecordSale} ({parsedQty || 0} {selectedProduct.unit})
                         </Text>
                       )}
                     </TouchableOpacity>
@@ -460,6 +466,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
+    minHeight: Touch.minTarget,
+    justifyContent: 'center',
     paddingVertical: Spacing.xs,
     paddingRight: Spacing.sm,
     marginBottom: Spacing.xs,
@@ -467,7 +475,7 @@ const styles = StyleSheet.create({
   backButtonText: {
     ...Typography.body,
     color: Colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   headerTitleRow: {
     flexDirection: 'row',
@@ -477,23 +485,26 @@ const styles = StyleSheet.create({
   title: {
     ...Typography.title,
     color: Colors.primaryDark,
+    fontSize: 24,
   },
   subtitle: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginTop: 2,
+    fontSize: 12,
   },
   badgeOffline: {
     backgroundColor: Colors.primarySurface,
     borderColor: Colors.accentLight,
     borderWidth: 1,
     borderRadius: 6,
-    paddingVertical: 4,
+    paddingVertical: 3,
     paddingHorizontal: 8,
   },
   badgeOfflineText: {
     ...Typography.badge,
     color: Colors.primaryDark,
+    fontSize: 11,
   },
   successBanner: {
     backgroundColor: '#E8F5E9',
@@ -501,7 +512,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 12,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   successHeaderRow: {
     flexDirection: 'row',
@@ -536,14 +547,16 @@ const styles = StyleSheet.create({
   },
   viewProductsButton: {
     backgroundColor: Colors.primaryDark,
-    borderRadius: 6,
-    paddingVertical: Spacing.xs + 2,
+    minHeight: Touch.minTarget,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: Spacing.md,
   },
   viewProductsButtonText: {
     ...Typography.bodySmall,
     color: Colors.textInverse,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   errorBanner: {
     backgroundColor: '#FFEBEE',
@@ -551,12 +564,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   errorText: {
     ...Typography.bodySmall,
     color: Colors.error,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   centerContainer: {
     alignItems: 'center',
@@ -591,6 +604,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
+    textAlign: 'center',
   },
   emptySubtitle: {
     ...Typography.body,
@@ -601,9 +615,11 @@ const styles = StyleSheet.create({
   },
   emptyButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.buttonHeight,
     paddingHorizontal: Spacing.xl,
-    borderRadius: 10,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyButtonText: {
     ...Typography.body,
@@ -611,7 +627,7 @@ const styles = StyleSheet.create({
     color: Colors.textInverse,
   },
   section: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.lg,
   },
   sectionTitle: {
     ...Typography.bodySmall,
@@ -620,6 +636,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     marginBottom: Spacing.sm,
     fontWeight: '700',
+    fontSize: 12,
   },
   productsList: {
     gap: Spacing.sm,
@@ -629,7 +646,9 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
     borderWidth: 1.5,
     borderRadius: 12,
-    padding: Spacing.md,
+    minHeight: Touch.minTarget + 12,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -650,6 +669,7 @@ const styles = StyleSheet.create({
     ...Typography.subtitle,
     color: Colors.textPrimary,
     fontWeight: '700',
+    fontSize: 16,
   },
   productItemNameSelected: {
     color: Colors.primaryDark,
@@ -658,12 +678,14 @@ const styles = StyleSheet.create({
     ...Typography.bodySmall,
     color: Colors.textMuted,
     marginTop: 2,
+    fontSize: 11,
   },
   outOfStockText: {
     ...Typography.bodySmall,
     color: Colors.error,
-    fontWeight: '600',
+    fontWeight: '700',
     marginTop: 2,
+    fontSize: 11,
   },
   productStockBadge: {
     backgroundColor: Colors.surfaceMuted,
@@ -681,7 +703,7 @@ const styles = StyleSheet.create({
   },
   productStockQty: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
     color: Colors.textPrimary,
   },
   productStockQtySelected: {
@@ -694,6 +716,7 @@ const styles = StyleSheet.create({
     ...Typography.badge,
     color: Colors.textSecondary,
     marginTop: -2,
+    fontSize: 11,
   },
   productStockUnitSelected: {
     color: Colors.accentLight,
@@ -704,9 +727,9 @@ const styles = StyleSheet.create({
   quantityCard: {
     backgroundColor: Colors.surface,
     borderColor: Colors.border,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: 12,
-    padding: Spacing.lg,
+    padding: Spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -728,52 +751,59 @@ const styles = StyleSheet.create({
     ...Typography.body,
     fontWeight: '700',
     color: Colors.primaryDark,
+    fontSize: 16,
   },
   selectedProductStock: {
     ...Typography.bodySmall,
     color: Colors.textPrimary,
+    fontSize: 13,
   },
   presetLabel: {
     ...Typography.bodySmall,
     color: Colors.textSecondary,
     marginBottom: Spacing.xs,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 12,
   },
   presetsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.xs,
+    gap: Spacing.xs + 2,
     marginBottom: Spacing.md,
   },
   presetChip: {
     backgroundColor: Colors.surfaceMuted,
     borderColor: Colors.border,
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderRadius: 20,
+    minHeight: Touch.chipHeight,
+    paddingHorizontal: Spacing.sm + 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   presetChipText: {
     ...Typography.bodySmall,
     color: Colors.textPrimary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   presetChipAll: {
     backgroundColor: '#FFF3E0',
     borderColor: '#FFE0B2',
-    borderWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    borderWidth: 1.5,
+    borderRadius: 20,
+    minHeight: Touch.chipHeight,
+    paddingHorizontal: Spacing.sm + 4,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   presetChipAllText: {
     ...Typography.bodySmall,
     color: Colors.warning,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   inputLabel: {
     ...Typography.body,
-    fontWeight: '600',
+    fontWeight: '700',
     color: Colors.textPrimary,
     marginBottom: Spacing.xs,
   },
@@ -786,7 +816,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderRadius: 8,
     paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
+    minHeight: Touch.inputHeight,
     ...Typography.body,
     color: Colors.textPrimary,
     marginBottom: Spacing.md,
@@ -798,8 +828,8 @@ const styles = StyleSheet.create({
   summaryBox: {
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
+    marginBottom: Spacing.md,
+    borderWidth: 1.5,
   },
   summaryBoxValid: {
     backgroundColor: Colors.surfaceMuted,
@@ -816,6 +846,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textMuted,
     marginBottom: Spacing.xs,
+    fontSize: 11,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -823,12 +854,13 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   summaryLabel: {
-    ...Typography.body,
+    ...Typography.bodySmall,
     color: Colors.textSecondary,
   },
   summaryValue: {
-    ...Typography.body,
+    ...Typography.bodySmall,
     color: Colors.textPrimary,
+    fontWeight: '600',
   },
   summaryValueNegative: {
     ...Typography.bodySmall,
@@ -837,8 +869,8 @@ const styles = StyleSheet.create({
   },
   recordButton: {
     backgroundColor: Colors.primary,
-    paddingVertical: Spacing.md + 2,
-    borderRadius: 10,
+    minHeight: Touch.buttonHeight,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -851,7 +883,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   recordButtonText: {
-    ...Typography.body,
+    ...Typography.subtitle,
     fontWeight: '700',
     color: Colors.textInverse,
   },

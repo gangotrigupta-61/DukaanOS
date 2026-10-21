@@ -26,43 +26,52 @@ export const Colors = {
   success: '#2E7D32',
   warning: '#E65100',
   error: '#C62828',
+  info: '#1565C0',
+  purple: '#673AB7',
 };
 
 export const Spacing = {
   xs: 4,
   sm: 8,
   md: 16,
-  lg: 24,
-  xl: 32,
-  xxl: 48,
+  lg: 20,
+  xl: 28,
+  xxl: 40,
+};
+
+export const Touch = {
+  minTarget: 48, // 48dp minimum touch target for comfortable one-handed mobile use
+  buttonHeight: 52,
+  inputHeight: 52,
+  chipHeight: 44,
 };
 
 export const Typography = {
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700' as const,
-    lineHeight: 40,
-    letterSpacing: -0.5,
+    lineHeight: 36,
+    letterSpacing: -0.4,
   },
   subtitle: {
-    fontSize: 18,
-    fontWeight: '500' as const,
-    lineHeight: 26,
-  },
-  body: {
-    fontSize: 16,
-    fontWeight: '400' as const,
+    fontSize: 17,
+    fontWeight: '600' as const,
     lineHeight: 24,
   },
+  body: {
+    fontSize: 15,
+    fontWeight: '400' as const,
+    lineHeight: 22,
+  },
   bodySmall: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '500' as const,
-    lineHeight: 20,
+    lineHeight: 18,
   },
   badge: {
-    fontSize: 13,
-    fontWeight: '600' as const,
-    lineHeight: 18,
+    fontSize: 12,
+    fontWeight: '700' as const,
+    lineHeight: 16,
     letterSpacing: 0.2,
   },
 };
