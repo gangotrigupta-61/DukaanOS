@@ -3,9 +3,11 @@ import { ActivityIndicator, SafeAreaView, StyleSheet } from 'react-native';
 import {
   AddProductScreen,
   HomeScreen,
+  LowStockScreen,
   ProductsScreen,
   QuickSaleScreen,
   ShopSetupScreen,
+  SlowMovingScreen,
 } from './app/index';
 import { Colors } from './constants/theme';
 import { getDatabase, getShop, initDatabase } from './db';
@@ -61,6 +63,8 @@ export default function App() {
           onBack={() => setCurrentScreen('home')}
           onAddProduct={() => setCurrentScreen('add_product')}
           onQuickSale={() => setCurrentScreen('quick_sale')}
+          onNavigateToLowStock={() => setCurrentScreen('low_stock')}
+          onNavigateToSlowMoving={() => setCurrentScreen('slow_moving')}
         />
       );
 
@@ -77,6 +81,24 @@ export default function App() {
         <QuickSaleScreen
           onBack={() => setCurrentScreen('home')}
           onNavigateToAddProduct={() => setCurrentScreen('add_product')}
+          onNavigateToProducts={() => setCurrentScreen('products')}
+        />
+      );
+
+    case 'low_stock':
+      return (
+        <LowStockScreen
+          onBack={() => setCurrentScreen('home')}
+          onNavigateToQuickSale={() => setCurrentScreen('quick_sale')}
+          onNavigateToProducts={() => setCurrentScreen('products')}
+        />
+      );
+
+    case 'slow_moving':
+      return (
+        <SlowMovingScreen
+          onBack={() => setCurrentScreen('home')}
+          onNavigateToQuickSale={() => setCurrentScreen('quick_sale')}
           onNavigateToProducts={() => setCurrentScreen('products')}
         />
       );

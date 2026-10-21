@@ -10,28 +10,40 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, Typography } from '../constants/theme';
-import { getProducts } from '../db';
+import { getLowStockProducts, getProducts, getSlowMovingProducts } from '../db';
 import { Product } from '../types';
 
 interface ProductsScreenProps {
   onBack: () => void;
   onAddProduct: () => void;
   onQuickSale: () => void;
+  onNavigateToLowStock?: () => void;
+  onNavigateToSlowMoving?: () => void;
 }
 
 export const ProductsScreen: React.FC<ProductsScreenProps> = ({
   onBack,
   onAddProduct,
   onQuickSale,
+  onNavigateToLowStock,
+  onNavigateToSlowMoving,
 }) => {
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
+  const [slowMovingCount, setSlowMovingCount] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
 
   const loadData = async () => {
     try {
-      const list = await getProducts();
+      const [list, lowList, slowList] = await Promise.all([
+        getProducts(),
+        getLowStockProducts(),
+        getSlowMovingProducts(30),
+      ]);
       setProducts(list);
+      setLowStockCount(lowList.length);
+      setSlowMovingCount(slowList.length);
     } catch (err) {
       console.error('Failed to load products:', err);
     } finally {
@@ -50,7 +62,6 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
   };
 
   const renderProductItem = ({ item }: { item: Product }) => {
-    // Format quantity cleanly (e.g. 20 instead of 20.0, or 16.5)
     const formattedQty = Number(item.quantity).toLocaleString(undefined, {
       maximumFractionDigits: 3,
     });
@@ -59,11 +70,33 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
       { maximumFractionDigits: 3 }
     );
     const isOutOfStock = item.quantity <= 0;
+    const isLowStock = !isOutOfStock && item.quantity <= item.low_stock_threshold;
 
     return (
-      <View style={[styles.productCard, isOutOfStock && styles.productCardEmpty]}>
+      <View
+        style={[
+          styles.productCard,
+          isOutOfStock
+            ? styles.productCardOut
+            : isLowStock
+            ? styles.productCardLow
+            : undefined,
+        ]}
+      >
         <View style={styles.productInfo}>
-          <Text style={styles.productName}>{item.name}</Text>
+          <View style={styles.productNameRow}>
+            <Text style={styles.productName}>{item.name}</Text>
+            {isOutOfStock && (
+              <View style={styles.tagOut}>
+                <Text style={styles.tagOutText}>OUT</Text>
+              </View>
+            )}
+            {isLowStock && (
+              <View style={styles.tagLow}>
+                <Text style={styles.tagLowText}>LOW</Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.thresholdText}>
             Alert below: {formattedThreshold} {item.unit}
           </Text>
@@ -72,13 +105,17 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
         <View
           style={[
             styles.stockBadge,
-            isOutOfStock && styles.stockBadgeEmpty,
+            isOutOfStock
+              ? styles.stockBadgeOut
+              : isLowStock
+              ? styles.stockBadgeLow
+              : undefined,
           ]}
         >
           <Text
             style={[
               styles.stockQuantity,
-              isOutOfStock && styles.stockQuantityEmpty,
+              isOutOfStock ? styles.stockQuantityOut : undefined,
             ]}
           >
             {formattedQty}
@@ -86,7 +123,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
           <Text
             style={[
               styles.stockUnit,
-              isOutOfStock && styles.stockUnitEmpty,
+              isOutOfStock ? styles.stockUnitOut : undefined,
             ]}
           >
             {item.unit}
@@ -140,6 +177,34 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Quick Filter / Insights Links */}
+          {products.length > 0 && (
+            <View style={styles.insightsLinksRow}>
+              {onNavigateToLowStock && lowStockCount > 0 && (
+                <TouchableOpacity
+                  style={styles.filterChipLow}
+                  onPress={onNavigateToLowStock}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.filterChipLowText}>
+                    ⚠ {lowStockCount} Low Stock
+                  </Text>
+                </TouchableOpacity>
+              )}
+              {onNavigateToSlowMoving && slowMovingCount > 0 && (
+                <TouchableOpacity
+                  style={styles.filterChipSlow}
+                  onPress={onNavigateToSlowMoving}
+                  accessibilityRole="button"
+                >
+                  <Text style={styles.filterChipSlowText}>
+                    🐌 {slowMovingCount} Slow-Moving
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Product List or Empty State */}
@@ -193,7 +258,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   header: {
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
   backButton: {
     alignSelf: 'flex-start',
@@ -247,8 +312,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textInverse,
   },
+  insightsLinksRow: {
+    flexDirection: 'row',
+    gap: Spacing.xs + 2,
+    marginTop: Spacing.sm,
+  },
+  filterChipLow: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FFE0B2',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+  },
+  filterChipLowText: {
+    ...Typography.badge,
+    color: Colors.warning,
+    fontSize: 12,
+  },
+  filterChipSlow: {
+    backgroundColor: '#EDE7F6',
+    borderColor: '#D1C4E9',
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+  },
+  filterChipSlowText: {
+    ...Typography.badge,
+    color: '#5E35B1',
+    fontSize: 12,
+  },
   listContent: {
-    paddingVertical: Spacing.md,
+    paddingVertical: Spacing.sm,
     paddingBottom: Spacing.xxl,
   },
   separator: {
@@ -269,18 +365,49 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
   },
-  productCardEmpty: {
-    backgroundColor: '#FAFAFA',
-    borderColor: '#EEEEEE',
+  productCardOut: {
+    backgroundColor: '#FFFBFB',
+    borderColor: '#FFCDD2',
+  },
+  productCardLow: {
+    backgroundColor: '#FFFCF7',
+    borderColor: '#FFE082',
   },
   productInfo: {
     flex: 1,
     paddingRight: Spacing.md,
   },
+  productNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
+  },
   productName: {
     ...Typography.subtitle,
     color: Colors.textPrimary,
     fontWeight: '700',
+  },
+  tagOut: {
+    backgroundColor: Colors.error,
+    borderRadius: 4,
+    paddingVertical: 1,
+    paddingHorizontal: 5,
+  },
+  tagOutText: {
+    color: Colors.textInverse,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  tagLow: {
+    backgroundColor: Colors.warning,
+    borderRadius: 4,
+    paddingVertical: 1,
+    paddingHorizontal: 5,
+  },
+  tagLowText: {
+    color: Colors.textInverse,
+    fontSize: 10,
+    fontWeight: '800',
   },
   thresholdText: {
     ...Typography.bodySmall,
@@ -297,16 +424,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minWidth: 70,
   },
-  stockBadgeEmpty: {
+  stockBadgeOut: {
     backgroundColor: '#FFEBEE',
     borderColor: '#FFCDD2',
+  },
+  stockBadgeLow: {
+    backgroundColor: '#FFF3E0',
+    borderColor: '#FFE0B2',
   },
   stockQuantity: {
     fontSize: 20,
     fontWeight: '700',
     color: Colors.primaryDark,
   },
-  stockQuantityEmpty: {
+  stockQuantityOut: {
     color: Colors.error,
   },
   stockUnit: {
@@ -314,7 +445,7 @@ const styles = StyleSheet.create({
     color: Colors.primaryLight,
     marginTop: -2,
   },
-  stockUnitEmpty: {
+  stockUnitOut: {
     color: Colors.error,
   },
   centerContainer: {

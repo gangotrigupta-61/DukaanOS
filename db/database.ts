@@ -3,11 +3,14 @@ import {
   CreateProductInput,
   CreateShopInput,
   DatabaseInitResult,
+  InventoryInsights,
+  LowStockItem,
   Product,
   RecordSaleInput,
   RecordSaleResult,
   Sale,
   Shop,
+  SlowMovingItem,
 } from '../types';
 
 export const DATABASE_NAME = 'dukaanos.db';
@@ -64,7 +67,7 @@ export async function initDatabase(db?: SQLite.SQLiteDatabase): Promise<Database
         );
       `);
 
-      // Sales table for recording completed sales (Phase 3)
+      // Sales table for recording completed sales
       await activeDb.execAsync(`
         CREATE TABLE IF NOT EXISTS sales (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -244,7 +247,7 @@ export async function getProductById(
 }
 
 // ==========================================
-// SALE OPERATIONS (Phase 3)
+// SALE OPERATIONS
 // ==========================================
 
 /**
@@ -346,4 +349,123 @@ export async function getSales(db?: SQLite.SQLiteDatabase): Promise<Sale[]> {
     'SELECT id, product_id, quantity, created_at FROM sales ORDER BY id DESC;'
   );
   return rows;
+}
+
+// ==========================================
+// INVENTORY INSIGHTS (Phase 4)
+// ==========================================
+
+/**
+ * Retrieves products where current quantity <= low_stock_threshold.
+ * Out of stock items (quantity = 0) are ordered first, followed by lowest quantity.
+ */
+export async function getLowStockProducts(
+  db?: SQLite.SQLiteDatabase
+): Promise<LowStockItem[]> {
+  const activeDb = db ?? (await getDatabase());
+  const rows = await activeDb.getAllAsync<
+    Product & { is_out_of_stock: number }
+  >(`
+    SELECT 
+      id, 
+      name, 
+      quantity, 
+      unit, 
+      low_stock_threshold, 
+      created_at, 
+      updated_at,
+      CASE WHEN quantity <= 0 THEN 1 ELSE 0 END AS is_out_of_stock
+    FROM products
+    WHERE quantity <= low_stock_threshold
+    ORDER BY 
+      is_out_of_stock DESC, 
+      quantity ASC, 
+      name COLLATE NOCASE ASC;
+  `);
+
+  return rows.map((r) => ({
+    ...r,
+    is_out_of_stock: r.is_out_of_stock === 1,
+  }));
+}
+
+/**
+ * Retrieves slow-moving products where:
+ * - No sale has ever been recorded ("Never Sold")
+ * - OR latest sale was recorded >= daysThreshold days ago (default: 30 days)
+ */
+export async function getSlowMovingProducts(
+  daysThreshold: number = 30,
+  db?: SQLite.SQLiteDatabase
+): Promise<SlowMovingItem[]> {
+  const activeDb = db ?? (await getDatabase());
+  const rows = await activeDb.getAllAsync<{
+    id: number;
+    name: string;
+    quantity: number;
+    unit: string;
+    low_stock_threshold: number;
+    created_at: string;
+    updated_at: string;
+    last_sale_at: string | null;
+    days_since_last_sale: number | null;
+  }>(
+    `
+    SELECT 
+      p.id,
+      p.name,
+      p.quantity,
+      p.unit,
+      p.low_stock_threshold,
+      p.created_at,
+      p.updated_at,
+      MAX(s.created_at) AS last_sale_at,
+      CASE 
+        WHEN MAX(s.created_at) IS NULL THEN NULL 
+        ELSE CAST(ROUND(julianday('now') - julianday(MAX(s.created_at))) AS INTEGER) 
+      END AS days_since_last_sale
+    FROM products p
+    LEFT JOIN sales s ON p.id = s.product_id
+    GROUP BY p.id
+    HAVING MAX(s.created_at) IS NULL 
+        OR julianday('now') - julianday(MAX(s.created_at)) >= ?
+    ORDER BY 
+      CASE WHEN MAX(s.created_at) IS NULL THEN 0 ELSE 1 END ASC,
+      days_since_last_sale DESC,
+      p.name COLLATE NOCASE ASC;
+    `,
+    daysThreshold
+  );
+
+  return rows.map((r) => ({
+    ...r,
+    is_never_sold: r.last_sale_at === null,
+  }));
+}
+
+/**
+ * Computes consolidated inventory insight counts from local SQLite data.
+ */
+export async function getInventoryInsights(
+  db?: SQLite.SQLiteDatabase
+): Promise<InventoryInsights> {
+  const activeDb = db ?? (await getDatabase());
+  const lowStock = await getLowStockProducts(activeDb);
+  const slowMoving = await getSlowMovingProducts(30, activeDb);
+  const totalRow = await activeDb.getFirstAsync<{ count: number }>(
+    'SELECT count(*) AS count FROM products;'
+  );
+
+  const outOfStockCount = lowStock.filter((i) => i.is_out_of_stock).length;
+  const lowStockCount = lowStock.filter((i) => !i.is_out_of_stock).length;
+  const neverSoldCount = slowMoving.filter((i) => i.is_never_sold).length;
+  const slowMovingCount = slowMoving.filter((i) => !i.is_never_sold).length;
+
+  return {
+    totalProducts: totalRow?.count ?? 0,
+    lowStockCount,
+    outOfStockCount,
+    slowMovingCount,
+    neverSoldCount,
+  };
 }

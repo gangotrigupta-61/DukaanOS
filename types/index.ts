@@ -59,10 +59,35 @@ export interface RecordSaleResult {
   remaining_quantity: number;
 }
 
+export interface LowStockItem extends Product {
+  is_out_of_stock: boolean;
+}
+
+export interface SlowMovingItem extends Product {
+  last_sale_at: string | null;
+  days_since_last_sale: number | null;
+  is_never_sold: boolean;
+}
+
+export interface InventoryInsights {
+  totalProducts: number;
+  lowStockCount: number;
+  outOfStockCount: number;
+  slowMovingCount: number;
+  neverSoldCount: number;
+}
+
 export interface DatabaseInitResult {
   success: boolean;
   tables: string[];
   error?: string;
 }
 
-export type Screen = 'home' | 'products' | 'add_product' | 'shop_setup' | 'quick_sale';
+export type Screen =
+  | 'home'
+  | 'products'
+  | 'add_product'
+  | 'shop_setup'
+  | 'quick_sale'
+  | 'low_stock'
+  | 'slow_moving';

@@ -11,8 +11,14 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { OfflineBadge } from '../components';
 import { Colors, Spacing, Typography } from '../constants/theme';
-import { getDatabase, getProducts, getShop, initDatabase } from '../db';
-import { DatabaseInitResult, Screen, Shop } from '../types';
+import {
+  getDatabase,
+  getInventoryInsights,
+  getProducts,
+  getShop,
+  initDatabase,
+} from '../db';
+import { DatabaseInitResult, InventoryInsights, Screen, Shop } from '../types';
 
 interface HomeScreenProps {
   onNavigate: (screen: Screen) => void;
@@ -23,6 +29,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [shop, setShop] = useState<Shop | null>(null);
   const [productCount, setProductCount] = useState<number>(0);
+  const [insights, setInsights] = useState<InventoryInsights | null>(null);
 
   const loadData = async () => {
     try {
@@ -35,6 +42,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
 
       const products = await getProducts(db);
       setProductCount(products.length);
+
+      const computedInsights = await getInventoryInsights(db);
+      setInsights(computedInsights);
     } catch (err) {
       setInitResult({
         success: false,
@@ -49,6 +59,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const totalAttentionCount =
+    (insights?.lowStockCount ?? 0) + (insights?.outOfStockCount ?? 0);
+  const totalSlowCount =
+    (insights?.slowMovingCount ?? 0) + (insights?.neverSoldCount ?? 0);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -105,6 +120,79 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             <Text style={styles.setupBannerArrow}>→</Text>
           </TouchableOpacity>
         )}
+
+        {/* Phase 4 Core Inventory Insights */}
+        <View style={styles.insightsSection}>
+          <Text style={styles.sectionHeader}>Inventory Health & Insights</Text>
+
+          <View style={styles.insightsGrid}>
+            {/* Low Stock Card */}
+            <TouchableOpacity
+              style={[
+                styles.insightCard,
+                totalAttentionCount > 0 ? styles.insightCardAlert : styles.insightCardHealthy,
+              ]}
+              onPress={() => onNavigate('low_stock')}
+              accessibilityRole="button"
+              accessibilityLabel={`Low Stock: ${totalAttentionCount} items`}
+            >
+              <View style={styles.insightHeaderRow}>
+                <Text style={styles.insightIcon}>⚠</Text>
+                <Text
+                  style={[
+                    styles.insightBadgeCount,
+                    totalAttentionCount > 0
+                      ? styles.insightBadgeCountAlert
+                      : styles.insightBadgeCountHealthy,
+                  ]}
+                >
+                  {totalAttentionCount}
+                </Text>
+              </View>
+              <Text style={styles.insightCardTitle}>Low Stock</Text>
+              <Text style={styles.insightCardSubtitle}>
+                {totalAttentionCount === 0
+                  ? 'All stock looks good'
+                  : insights?.outOfStockCount
+                  ? `${insights.outOfStockCount} out • ${insights.lowStockCount} low`
+                  : `${totalAttentionCount} items need restock`}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Slow Moving Card */}
+            <TouchableOpacity
+              style={[
+                styles.insightCard,
+                totalSlowCount > 0 ? styles.insightCardSlow : styles.insightCardHealthy,
+              ]}
+              onPress={() => onNavigate('slow_moving')}
+              accessibilityRole="button"
+              accessibilityLabel={`Slow Moving: ${totalSlowCount} items`}
+            >
+              <View style={styles.insightHeaderRow}>
+                <Text style={styles.insightIcon}>🐌</Text>
+                <Text
+                  style={[
+                    styles.insightBadgeCount,
+                    totalSlowCount > 0
+                      ? styles.insightBadgeCountSlow
+                      : styles.insightBadgeCountHealthy,
+                  ]}
+                >
+                  {totalSlowCount}
+                </Text>
+              </View>
+              <Text style={styles.insightCardTitle}>Slow Moving</Text>
+              <Text style={styles.insightCardSubtitle}>
+                {totalSlowCount === 0
+                  ? 'Active movement'
+                  : insights?.neverSoldCount
+                  ? `${insights.neverSoldCount} never sold • ${insights.slowMovingCount} inactive`
+                  : `${totalSlowCount} inactive (30+ days)`}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         {/* Core Shopkeeper Actions */}
         <View style={styles.actionsSection}>
@@ -206,7 +294,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         {/* Footer info */}
         <View style={styles.footer}>
           <Text style={styles.footerNote}>
-            DukaanOS Phase 3 • Core Quick Sale & Automatic Stock Active
+            DukaanOS Phase 4 • Low Stock & Slow-Moving Insights Ready
           </Text>
         </View>
       </ScrollView>
@@ -315,7 +403,7 @@ const styles = StyleSheet.create({
     color: Colors.primaryDark,
     fontWeight: '700',
   },
-  actionsSection: {
+  insightsSection: {
     marginBottom: Spacing.lg,
   },
   sectionHeader: {
@@ -323,7 +411,71 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
+    fontWeight: '700',
+  },
+  insightsGrid: {
+    flexDirection: 'row',
+    gap: Spacing.sm + 2,
+  },
+  insightCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    padding: Spacing.md,
+    borderWidth: 1.5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  insightCardAlert: {
+    borderColor: '#FFCDD2',
+    backgroundColor: '#FFFBFB',
+  },
+  insightCardSlow: {
+    borderColor: '#FFE0B2',
+    backgroundColor: '#FFFCF7',
+  },
+  insightCardHealthy: {
+    borderColor: Colors.border,
+  },
+  insightHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  insightIcon: {
+    fontSize: 20,
+  },
+  insightBadgeCount: {
+    fontSize: 18,
+    fontWeight: '800',
+  },
+  insightBadgeCountAlert: {
+    color: Colors.error,
+  },
+  insightBadgeCountSlow: {
+    color: Colors.warning,
+  },
+  insightBadgeCountHealthy: {
+    color: Colors.primaryLight,
+  },
+  insightCardTitle: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  insightCardSubtitle: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    fontSize: 12,
+  },
+  actionsSection: {
+    marginBottom: Spacing.lg,
   },
   heroSaleButton: {
     backgroundColor: Colors.primaryDark,
