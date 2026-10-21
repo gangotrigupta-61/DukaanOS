@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "DukaanOS",
-    "slug": "DukaanOS",
+    "slug": "dukaanos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -24,6 +24,12 @@
     },
     "plugins": [
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "68e7ca92-28b5-4180-a5ce-c27f9e9a1472"
+      }
+    },
+    "owner": "dukaanoss-team"
   }
 }
