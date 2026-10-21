@@ -1,0 +1,35 @@
+/**
+ * DukaanOS Data Models
+ * Designed for offline-first neighbourhood Kirana stores.
+ */
+
+export interface Product {
+  id: number;
+  name: string;
+  /**
+   * Supports fractional values (e.g. 20 kg -> sell 3.5 kg -> remaining 16.5 kg)
+   */
+  quantity: number;
+  unit: string;
+  low_stock_threshold: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateProductInput = Omit<Product, 'id' | 'created_at' | 'updated_at'>;
+
+export interface Shop {
+  id: number;
+  shop_name: string;
+  shop_type: string;
+  language: string;
+  created_at: string;
+}
+
+export type CreateShopInput = Omit<Shop, 'id' | 'created_at'>;
+
+export interface DatabaseInitResult {
+  success: boolean;
+  tables: string[];
+  error?: string;
+}
