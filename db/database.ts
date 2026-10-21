@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { DatabaseInitResult } from '../types';
+import { CreateProductInput, CreateShopInput, DatabaseInitResult, Product, Shop } from '../types';
 
 export const DATABASE_NAME = 'dukaanos.db';
 
@@ -85,4 +85,139 @@ export async function getExistingTables(db: SQLite.SQLiteDatabase): Promise<stri
     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'android_%' ORDER BY name;"
   );
   return rows.map((r) => r.name);
+}
+
+// ==========================================
+// SHOP OPERATIONS
+// ==========================================
+
+/**
+ * Fetches the active shop configuration if one exists.
+ */
+export async function getShop(db?: SQLite.SQLiteDatabase): Promise<Shop | null> {
+  const activeDb = db ?? (await getDatabase());
+  const row = await activeDb.getFirstAsync<Shop>(
+    'SELECT id, shop_name, shop_type, language, created_at FROM shops ORDER BY id ASC LIMIT 1;'
+  );
+  return row ?? null;
+}
+
+/**
+ * Saves or updates shop profile information.
+ */
+export async function saveShop(
+  input: CreateShopInput,
+  db?: SQLite.SQLiteDatabase
+): Promise<Shop> {
+  const activeDb = db ?? (await getDatabase());
+  const existing = await getShop(activeDb);
+
+  if (existing) {
+    await activeDb.runAsync(
+      'UPDATE shops SET shop_name = ?, shop_type = ?, language = ? WHERE id = ?;',
+      input.shop_name.trim(),
+      input.shop_type.trim(),
+      input.language.trim(),
+      existing.id
+    );
+    return {
+      ...existing,
+      shop_name: input.shop_name.trim(),
+      shop_type: input.shop_type.trim(),
+      language: input.language.trim(),
+    };
+  }
+
+  const result = await activeDb.runAsync(
+    "INSERT INTO shops (shop_name, shop_type, language, created_at) VALUES (?, ?, ?, datetime('now'));",
+    input.shop_name.trim(),
+    input.shop_type.trim(),
+    input.language.trim()
+  );
+
+  const inserted = await activeDb.getFirstAsync<Shop>(
+    'SELECT id, shop_name, shop_type, language, created_at FROM shops WHERE id = ?;',
+    result.lastInsertRowId
+  );
+
+  if (!inserted) {
+    throw new Error('Failed to retrieve newly created shop profile');
+  }
+
+  return inserted;
+}
+
+// ==========================================
+// PRODUCT OPERATIONS
+// ==========================================
+
+/**
+ * Retrieves all products sorted alphabetically by name.
+ */
+export async function getProducts(db?: SQLite.SQLiteDatabase): Promise<Product[]> {
+  const activeDb = db ?? (await getDatabase());
+  const rows = await activeDb.getAllAsync<Product>(
+    'SELECT id, name, quantity, unit, low_stock_threshold, created_at, updated_at FROM products ORDER BY name COLLATE NOCASE ASC;'
+  );
+  return rows;
+}
+
+/**
+ * Adds a new product to the inventory.
+ * Supports decimal values for quantity and low_stock_threshold.
+ */
+export async function addProduct(
+  input: CreateProductInput,
+  db?: SQLite.SQLiteDatabase
+): Promise<Product> {
+  const activeDb = db ?? (await getDatabase());
+
+  const cleanName = input.name.trim();
+  const quantity = Number(input.quantity);
+  const unit = input.unit.trim();
+  const lowStock = Number(input.low_stock_threshold);
+
+  if (!cleanName) {
+    throw new Error('Product name cannot be empty');
+  }
+  if (isNaN(quantity) || quantity < 0) {
+    throw new Error('Quantity cannot be negative');
+  }
+  if (isNaN(lowStock) || lowStock < 0) {
+    throw new Error('Low stock threshold cannot be negative');
+  }
+
+  const result = await activeDb.runAsync(
+    "INSERT INTO products (name, quantity, unit, low_stock_threshold, created_at, updated_at) VALUES (?, ?, ?, ?, datetime('now'), datetime('now'));",
+    cleanName,
+    quantity,
+    unit,
+    lowStock
+  );
+
+  const created = await activeDb.getFirstAsync<Product>(
+    'SELECT id, name, quantity, unit, low_stock_threshold, created_at, updated_at FROM products WHERE id = ?;',
+    result.lastInsertRowId
+  );
+
+  if (!created) {
+    throw new Error('Failed to retrieve newly created product');
+  }
+
+  return created;
+}
+
+/**
+ * Fetches a single product by ID.
+ */
+export async function getProductById(
+  id: number,
+  db?: SQLite.SQLiteDatabase
+): Promise<Product | null> {
+  const activeDb = db ?? (await getDatabase());
+  const row = await activeDb.getFirstAsync<Product>(
+    'SELECT id, name, quantity, unit, low_stock_threshold, created_at, updated_at FROM products WHERE id = ?;',
+    id
+  );
+  return row ?? null;
 }

@@ -3,6 +3,18 @@
  * Designed for offline-first neighbourhood Kirana stores.
  */
 
+export const SUPPORTED_UNITS = [
+  'kg',
+  'g',
+  'litre',
+  'ml',
+  'pcs',
+  'packet',
+  'box',
+] as const;
+
+export type SupportedUnit = (typeof SUPPORTED_UNITS)[number];
+
 export interface Product {
   id: number;
   name: string;
@@ -33,3 +45,5 @@ export interface DatabaseInitResult {
   tables: string[];
   error?: string;
 }
+
+export type Screen = 'home' | 'products' | 'add_product' | 'shop_setup';

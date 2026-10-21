@@ -2,54 +2,58 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { OfflineBadge } from '../components';
 import { Colors, Spacing, Typography } from '../constants/theme';
-import { getDatabase, initDatabase } from '../db';
-import { DatabaseInitResult } from '../types';
+import { getDatabase, getProducts, getShop, initDatabase } from '../db';
+import { DatabaseInitResult, Screen, Shop } from '../types';
 
-export const HomeScreen: React.FC = () => {
+interface HomeScreenProps {
+  onNavigate: (screen: Screen) => void;
+}
+
+export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
   const [initResult, setInitResult] = useState<DatabaseInitResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [shop, setShop] = useState<Shop | null>(null);
+  const [productCount, setProductCount] = useState<number>(0);
+
+  const loadData = async () => {
+    try {
+      const db = await getDatabase();
+      const result = await initDatabase(db);
+      setInitResult(result);
+
+      const activeShop = await getShop(db);
+      setShop(activeShop);
+
+      const products = await getProducts(db);
+      setProductCount(products.length);
+    } catch (err) {
+      setInitResult({
+        success: false,
+        tables: [],
+        error: err instanceof Error ? err.message : String(err),
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function setupStorage() {
-      try {
-        const db = await getDatabase();
-        const result = await initDatabase(db);
-        if (isMounted) {
-          setInitResult(result);
-          setIsLoading(false);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setInitResult({
-            success: false,
-            tables: [],
-            error: err instanceof Error ? err.message : String(err),
-          });
-          setIsLoading(false);
-        }
-      }
-    }
-
-    setupStorage();
-
-    return () => {
-      isMounted = false;
-    };
+    loadData();
   }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="dark" />
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.container}>
         {/* Header Block */}
         <View style={styles.headerBlock}>
           <Text style={styles.appName}>DukaanOS</Text>
@@ -59,7 +63,90 @@ export const HomeScreen: React.FC = () => {
           </View>
         </View>
 
-        {/* Foundation Status Card */}
+        {/* Shop Info Card */}
+        {shop ? (
+          <View style={styles.shopCard}>
+            <View style={styles.shopInfoRow}>
+              <View>
+                <Text style={styles.shopGreeting}>Active Store</Text>
+                <Text style={styles.shopTitle}>{shop.shop_name}</Text>
+                <Text style={styles.shopDetails}>
+                  {shop.shop_type} • {shop.language === 'hi' ? 'हिंदी' : shop.language === 'hi-en' ? 'Hinglish' : 'English'}
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => onNavigate('shop_setup')}
+                style={styles.editShopButton}
+                accessibilityRole="button"
+                accessibilityLabel="Edit shop details"
+              >
+                <Text style={styles.editShopButtonText}>Edit</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <TouchableOpacity
+            style={styles.setupBanner}
+            onPress={() => onNavigate('shop_setup')}
+            accessibilityRole="button"
+            accessibilityLabel="Setup shop now"
+          >
+            <View>
+              <Text style={styles.setupBannerTitle}>Setup Your Shop</Text>
+              <Text style={styles.setupBannerSubtitle}>
+                Add your shop name and preferences to personalize DukaanOS
+              </Text>
+            </View>
+            <Text style={styles.setupBannerArrow}>→</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Phase 2 Primary Workflow Actions */}
+        <View style={styles.actionsSection}>
+          <Text style={styles.sectionHeader}>Stock Management</Text>
+
+          {/* View Stock Button */}
+          <TouchableOpacity
+            style={styles.primaryActionButton}
+            onPress={() => onNavigate('products')}
+            accessibilityRole="button"
+            accessibilityLabel="View Products and Stock"
+          >
+            <View style={styles.actionIconContainer}>
+              <Text style={styles.actionIcon}>📦</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitle}>Products & Stock</Text>
+              <Text style={styles.actionSubtitle}>
+                {productCount === 0
+                  ? 'No items added yet'
+                  : `${productCount} ${productCount === 1 ? 'item' : 'items'} in inventory`}
+              </Text>
+            </View>
+            <Text style={styles.actionArrow}>→</Text>
+          </TouchableOpacity>
+
+          {/* Add Product Button */}
+          <TouchableOpacity
+            style={styles.secondaryActionButton}
+            onPress={() => onNavigate('add_product')}
+            accessibilityRole="button"
+            accessibilityLabel="Add New Product"
+          >
+            <View style={styles.actionIconContainerSecondary}>
+              <Text style={styles.actionIcon}>➕</Text>
+            </View>
+            <View style={styles.actionTextContainer}>
+              <Text style={styles.actionTitleSecondary}>Add New Product</Text>
+              <Text style={styles.actionSubtitle}>
+                Record product name, stock quantity, and alert levels
+              </Text>
+            </View>
+            <Text style={styles.actionArrowSecondary}>→</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Phase 1 System Foundation Card (Preserved) */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>System Foundation</Text>
 
@@ -90,13 +177,13 @@ export const HomeScreen: React.FC = () => {
           )}
         </View>
 
-        {/* Footer info for shop owner reassurance */}
+        {/* Footer info */}
         <View style={styles.footer}>
           <Text style={styles.footerNote}>
-            Phase 1 • Mobile Foundation & SQLite Ready
+            DukaanOS Phase 2 • Offline Store & Stock Ready
           </Text>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -107,14 +194,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   container: {
-    flex: 1,
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.xl,
-    paddingBottom: Spacing.lg,
-    justifyContent: 'space-between',
+    paddingBottom: Spacing.xxl,
   },
   headerBlock: {
     gap: Spacing.xs,
+    marginBottom: Spacing.lg,
   },
   appName: {
     ...Typography.title,
@@ -129,6 +215,170 @@ const styles = StyleSheet.create({
   badgeWrapper: {
     marginTop: Spacing.xs,
   },
+  shopCard: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: Spacing.md + 2,
+    marginBottom: Spacing.lg,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  shopInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  shopGreeting: {
+    ...Typography.bodySmall,
+    color: Colors.primaryLight,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  shopTitle: {
+    ...Typography.subtitle,
+    color: Colors.textPrimary,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  shopDetails: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  editShopButton: {
+    paddingVertical: Spacing.xs,
+    paddingHorizontal: Spacing.md,
+    borderRadius: 6,
+    backgroundColor: Colors.primarySurface,
+  },
+  editShopButtonText: {
+    ...Typography.bodySmall,
+    color: Colors.primaryDark,
+    fontWeight: '600',
+  },
+  setupBanner: {
+    backgroundColor: Colors.primarySurface,
+    borderColor: Colors.accentLight,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    padding: Spacing.md + 4,
+    marginBottom: Spacing.lg,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  setupBannerTitle: {
+    ...Typography.subtitle,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+  },
+  setupBannerSubtitle: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    marginTop: 2,
+    maxWidth: 260,
+  },
+  setupBannerArrow: {
+    fontSize: 24,
+    color: Colors.primaryDark,
+    fontWeight: '700',
+  },
+  actionsSection: {
+    marginBottom: Spacing.lg,
+  },
+  sectionHeader: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: Spacing.md,
+  },
+  primaryActionButton: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.primary,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  secondaryActionButton: {
+    backgroundColor: Colors.surface,
+    borderColor: Colors.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: Spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  actionIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: Colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  actionIconContainerSecondary: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: Colors.surfaceMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.md,
+  },
+  actionIcon: {
+    fontSize: 22,
+  },
+  actionTextContainer: {
+    flex: 1,
+  },
+  actionTitle: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.primaryDark,
+  },
+  actionTitleSecondary: {
+    ...Typography.body,
+    fontWeight: '700',
+    color: Colors.textPrimary,
+  },
+  actionSubtitle: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
+  actionArrow: {
+    fontSize: 20,
+    color: Colors.primary,
+    fontWeight: '700',
+    marginLeft: Spacing.sm,
+  },
+  actionArrowSecondary: {
+    fontSize: 20,
+    color: Colors.textMuted,
+    fontWeight: '600',
+    marginLeft: Spacing.sm,
+  },
   card: {
     backgroundColor: Colors.surface,
     borderRadius: 12,
@@ -139,8 +389,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 3,
-    elevation: 2,
-    marginVertical: Spacing.xl,
+    elevation: 1,
+    marginBottom: Spacing.lg,
   },
   cardHeader: {
     ...Typography.bodySmall,
