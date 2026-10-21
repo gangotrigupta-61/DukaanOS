@@ -90,4 +90,5 @@ export type Screen =
   | 'shop_setup'
   | 'quick_sale'
   | 'low_stock'
-  | 'slow_moving';
+  | 'slow_moving'
+  | 'welcome';

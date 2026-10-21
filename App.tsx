@@ -8,14 +8,18 @@ import {
   QuickSaleScreen,
   ShopSetupScreen,
   SlowMovingScreen,
+  WelcomeScreen,
 } from './app/index';
+import { Language } from './constants/strings';
 import { Colors } from './constants/theme';
+import { LanguageProvider } from './context';
 import { getDatabase, getShop, initDatabase } from './db';
 import { Screen } from './types';
 
 export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('home');
   const [isInitializing, setIsInitializing] = useState<boolean>(true);
+  const [initialLanguage, setInitialLanguage] = useState<Language>('hi-en');
 
   useEffect(() => {
     async function setupApp() {
@@ -24,9 +28,13 @@ export default function App() {
         await initDatabase(db);
         const shop = await getShop(db);
 
-        // If no shop exists yet, guide the user to first-time setup
+        if (shop?.language) {
+          setInitialLanguage(shop.language as Language);
+        }
+
+        // If no shop exists yet, guide the user to Welcome landing screen
         if (!shop) {
-          setCurrentScreen('shop_setup');
+          setCurrentScreen('welcome');
         } else {
           setCurrentScreen('home');
         }
@@ -48,67 +56,82 @@ export default function App() {
     );
   }
 
-  switch (currentScreen) {
-    case 'shop_setup':
-      return (
-        <ShopSetupScreen
-          onComplete={() => setCurrentScreen('home')}
-          onCancel={() => setCurrentScreen('home')}
-        />
-      );
+  const renderScreen = () => {
+    switch (currentScreen) {
+      case 'welcome':
+        return (
+          <WelcomeScreen
+            onStart={() => setCurrentScreen('shop_setup')}
+          />
+        );
 
-    case 'products':
-      return (
-        <ProductsScreen
-          onBack={() => setCurrentScreen('home')}
-          onAddProduct={() => setCurrentScreen('add_product')}
-          onQuickSale={() => setCurrentScreen('quick_sale')}
-          onNavigateToLowStock={() => setCurrentScreen('low_stock')}
-          onNavigateToSlowMoving={() => setCurrentScreen('slow_moving')}
-        />
-      );
+      case 'shop_setup':
+        return (
+          <ShopSetupScreen
+            onComplete={() => setCurrentScreen('home')}
+            onCancel={() => setCurrentScreen('home')}
+          />
+        );
 
-    case 'add_product':
-      return (
-        <AddProductScreen
-          onSuccess={() => setCurrentScreen('products')}
-          onCancel={() => setCurrentScreen('products')}
-        />
-      );
+      case 'products':
+        return (
+          <ProductsScreen
+            onBack={() => setCurrentScreen('home')}
+            onAddProduct={() => setCurrentScreen('add_product')}
+            onQuickSale={() => setCurrentScreen('quick_sale')}
+            onNavigateToLowStock={() => setCurrentScreen('low_stock')}
+            onNavigateToSlowMoving={() => setCurrentScreen('slow_moving')}
+          />
+        );
 
-    case 'quick_sale':
-      return (
-        <QuickSaleScreen
-          onBack={() => setCurrentScreen('home')}
-          onNavigateToAddProduct={() => setCurrentScreen('add_product')}
-          onNavigateToProducts={() => setCurrentScreen('products')}
-        />
-      );
+      case 'add_product':
+        return (
+          <AddProductScreen
+            onSuccess={() => setCurrentScreen('products')}
+            onCancel={() => setCurrentScreen('products')}
+          />
+        );
 
-    case 'low_stock':
-      return (
-        <LowStockScreen
-          onBack={() => setCurrentScreen('home')}
-          onNavigateToQuickSale={() => setCurrentScreen('quick_sale')}
-          onNavigateToProducts={() => setCurrentScreen('products')}
-        />
-      );
+      case 'quick_sale':
+        return (
+          <QuickSaleScreen
+            onBack={() => setCurrentScreen('home')}
+            onNavigateToAddProduct={() => setCurrentScreen('add_product')}
+            onNavigateToProducts={() => setCurrentScreen('products')}
+          />
+        );
 
-    case 'slow_moving':
-      return (
-        <SlowMovingScreen
-          onBack={() => setCurrentScreen('home')}
-          onNavigateToQuickSale={() => setCurrentScreen('quick_sale')}
-          onNavigateToProducts={() => setCurrentScreen('products')}
-        />
-      );
+      case 'low_stock':
+        return (
+          <LowStockScreen
+            onBack={() => setCurrentScreen('home')}
+            onNavigateToQuickSale={() => setCurrentScreen('quick_sale')}
+            onNavigateToProducts={() => setCurrentScreen('products')}
+          />
+        );
 
-    case 'home':
-    default:
-      return (
-        <HomeScreen onNavigate={(screen: Screen) => setCurrentScreen(screen)} />
-      );
-  }
+      case 'slow_moving':
+        return (
+          <SlowMovingScreen
+            onBack={() => setCurrentScreen('home')}
+            onNavigateToQuickSale={() => setCurrentScreen('quick_sale')}
+            onNavigateToProducts={() => setCurrentScreen('products')}
+          />
+        );
+
+      case 'home':
+      default:
+        return (
+          <HomeScreen onNavigate={(screen: Screen) => setCurrentScreen(screen)} />
+        );
+    }
+  };
+
+  return (
+    <LanguageProvider initialLanguage={initialLanguage}>
+      {renderScreen()}
+    </LanguageProvider>
+  );
 }
 
 const styles = StyleSheet.create({

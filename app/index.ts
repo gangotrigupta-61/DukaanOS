@@ -5,3 +5,4 @@ export * from './ProductsScreen';
 export * from './QuickSaleScreen';
 export * from './LowStockScreen';
 export * from './SlowMovingScreen';
+export * from './WelcomeScreen';

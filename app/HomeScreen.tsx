@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { OfflineBadge } from '../components';
+import { OfflineBadge, LanguageSelector } from '../components';
 import { Colors, Spacing, Touch, Typography } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../context';
 import {
   getDatabase,
   getInventoryInsights,
@@ -26,6 +26,7 @@ interface HomeScreenProps {
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
+  const { strings, language } = useLanguage();
   const [initResult, setInitResult] = useState<DatabaseInitResult | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [shop, setShop] = useState<Shop | null>(null);
@@ -73,10 +74,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         {/* Header Block */}
         <View style={styles.headerBlock}>
           <View style={styles.brandRow}>
-            <Text style={styles.appName}>{Strings.appName}</Text>
-            <OfflineBadge compact />
+            <Text style={styles.appName}>{strings.appName}</Text>
+            <View style={styles.headerRight}>
+              <LanguageSelector compact />
+              <OfflineBadge compact />
+            </View>
           </View>
-          <Text style={styles.subtitle}>{Strings.taglineBilingual}</Text>
+          <Text style={styles.subtitle}>{strings.tagline}</Text>
         </View>
 
         {/* Shop Info Card */}
@@ -84,15 +88,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
           <View style={styles.shopCard}>
             <View style={styles.shopInfoRow}>
               <View style={styles.shopTextContainer}>
-                <Text style={styles.shopGreeting}>Active Store • दुकान</Text>
+                <Text style={styles.shopGreeting}>{strings.activeStore}</Text>
                 <Text style={styles.shopTitle} numberOfLines={1}>
                   {shop.shop_name}
                 </Text>
                 <Text style={styles.shopDetails}>
                   {shop.shop_type} •{' '}
-                  {shop.language === 'hi'
+                  {language === 'hi'
                     ? 'हिंदी'
-                    : shop.language === 'hi-en'
+                    : language === 'hi-en'
                     ? 'Hinglish'
                     : 'English'}
                 </Text>
@@ -101,9 +105,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                 onPress={() => onNavigate('shop_setup')}
                 style={styles.editShopButton}
                 accessibilityRole="button"
-                accessibilityLabel="Edit shop details"
+                accessibilityLabel={strings.editShop}
               >
-                <Text style={styles.editShopButtonText}>{Strings.editShop}</Text>
+                <Text style={styles.editShopButtonText}>{strings.editShop}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -112,21 +116,21 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             style={styles.setupBanner}
             onPress={() => onNavigate('shop_setup')}
             accessibilityRole="button"
-            accessibilityLabel="Setup shop now"
+            accessibilityLabel={strings.setupShopBannerTitle}
           >
             <View style={styles.setupBannerText}>
-              <Text style={styles.setupBannerTitle}>Setup Your Shop / दुकान जोड़ें</Text>
+              <Text style={styles.setupBannerTitle}>{strings.setupShopBannerTitle}</Text>
               <Text style={styles.setupBannerSubtitle}>
-                Add your shop name and preferences to personalize DukaanOS
+                {strings.setupShopBannerSubtitle}
               </Text>
             </View>
             <Text style={styles.setupBannerArrow}>→</Text>
           </TouchableOpacity>
         )}
 
-        {/* Phase 4 & 5 Core Inventory Health Cards */}
+        {/* Core Inventory Health Cards */}
         <View style={styles.insightsSection}>
-          <Text style={styles.sectionHeader}>Inventory Health • स्टॉक की स्थिति</Text>
+          <Text style={styles.sectionHeader}>{strings.inventoryHealth}</Text>
 
           <View style={styles.insightsGrid}>
             {/* Low Stock Card */}
@@ -137,7 +141,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
               ]}
               onPress={() => onNavigate('low_stock')}
               accessibilityRole="button"
-              accessibilityLabel={`Low Stock: ${totalAttentionCount} items`}
+              accessibilityLabel={`${strings.lowStock}: ${totalAttentionCount}`}
             >
               <View style={styles.insightHeaderRow}>
                 <Text style={styles.insightIcon}>⚠</Text>
@@ -161,13 +165,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.insightCardTitle}>Low Stock / कम स्टॉक</Text>
+              <Text style={styles.insightCardTitle}>{strings.lowStock}</Text>
               <Text style={styles.insightCardSubtitle}>
                 {totalAttentionCount === 0
-                  ? 'All stock healthy • सब पर्याप्त'
+                  ? strings.allStockHealthy
                   : insights?.outOfStockCount
-                  ? `${insights.outOfStockCount} Out • ${insights.lowStockCount} Low`
-                  : `${totalAttentionCount} items need restock`}
+                  ? `${insights.outOfStockCount} ${strings.statusOutOfStock} • ${insights.lowStockCount} ${strings.statusLowStock}`
+                  : `${totalAttentionCount} ${strings.itemsNeedAttention}`}
               </Text>
             </TouchableOpacity>
 
@@ -179,7 +183,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
               ]}
               onPress={() => onNavigate('slow_moving')}
               accessibilityRole="button"
-              accessibilityLabel={`Slow Moving: ${totalSlowCount} items`}
+              accessibilityLabel={`${strings.slowMoving}: ${totalSlowCount}`}
             >
               <View style={styles.insightHeaderRow}>
                 <Text style={styles.insightIcon}>🐌</Text>
@@ -203,13 +207,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
                   </Text>
                 </View>
               </View>
-              <Text style={styles.insightCardTitle}>Slow Moving / धीमी बिक्री</Text>
+              <Text style={styles.insightCardTitle}>{strings.slowMoving}</Text>
               <Text style={styles.insightCardSubtitle}>
                 {totalSlowCount === 0
-                  ? 'Active movement • सब बिक रहा'
+                  ? strings.activeMovement
                   : insights?.neverSoldCount
-                  ? `${insights.neverSoldCount} Never Sold • ${insights.slowMovingCount} Slow`
-                  : `${totalSlowCount} inactive (30+ days)`}
+                  ? `${insights.neverSoldCount} ${strings.statusNeverSold} • ${insights.slowMovingCount} ${strings.statusSlowMoving}`
+                  : `${totalSlowCount} ${strings.productsNeedMovement}`}
               </Text>
             </TouchableOpacity>
           </View>
@@ -217,22 +221,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
 
         {/* Primary Shopkeeper Actions */}
         <View style={styles.actionsSection}>
-          <Text style={styles.sectionHeader}>Quick Actions • मुख्य कार्य</Text>
+          <Text style={styles.sectionHeader}>{strings.quickActions}</Text>
 
           {/* Quick Sale Hero Button */}
           <TouchableOpacity
             style={styles.heroSaleButton}
             onPress={() => onNavigate('quick_sale')}
             accessibilityRole="button"
-            accessibilityLabel="Record Quick Sale"
+            accessibilityLabel={strings.quickSale}
           >
             <View style={styles.heroSaleIconContainer}>
               <Text style={styles.heroSaleIcon}>⚡</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.heroSaleTitle}>{Strings.quickSale}</Text>
+              <Text style={styles.heroSaleTitle}>{strings.quickSale}</Text>
               <Text style={styles.heroSaleSubtitle}>
-                Instant sale with automatic stock deduction • तुरंत बिक्री
+                {strings.quickSaleDesc}
               </Text>
             </View>
             <Text style={styles.heroSaleArrow}>→</Text>
@@ -243,17 +247,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             style={styles.primaryActionButton}
             onPress={() => onNavigate('products')}
             accessibilityRole="button"
-            accessibilityLabel="View Products and Stock"
+            accessibilityLabel={strings.products}
           >
             <View style={styles.actionIconContainer}>
               <Text style={styles.actionIcon}>📦</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitle}>{Strings.products}</Text>
+              <Text style={styles.actionTitle}>{strings.products}</Text>
               <Text style={styles.actionSubtitle}>
                 {productCount === 0
-                  ? 'No items added yet • कोई सामान नहीं'
-                  : `${productCount} ${productCount === 1 ? 'item' : 'items'} in inventory • स्टॉक देखें`}
+                  ? strings.noProductsTitle
+                  : `${productCount} ${strings.productsSubtitle}`}
               </Text>
             </View>
             <Text style={styles.actionArrow}>→</Text>
@@ -264,40 +268,40 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
             style={styles.secondaryActionButton}
             onPress={() => onNavigate('add_product')}
             accessibilityRole="button"
-            accessibilityLabel="Add New Product"
+            accessibilityLabel={strings.addProduct}
           >
             <View style={styles.actionIconContainerSecondary}>
               <Text style={styles.actionIcon}>➕</Text>
             </View>
             <View style={styles.actionTextContainer}>
-              <Text style={styles.actionTitleSecondary}>{Strings.addProduct}</Text>
+              <Text style={styles.actionTitleSecondary}>{strings.addProduct}</Text>
               <Text style={styles.actionSubtitle}>
-                Add stock items with alert threshold • नया सामान जोड़ें
+                {strings.addProductDesc}
               </Text>
             </View>
             <Text style={styles.actionArrowSecondary}>→</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Offline & System Foundation Card (Preserved from Phase 1) */}
+        {/* Offline & System Foundation Card */}
         <View style={styles.card}>
-          <Text style={styles.cardHeader}>Local Offline Storage • स्थानीय स्टोरेज</Text>
+          <Text style={styles.cardHeader}>{strings.offlineStorageHeader}</Text>
 
           {isLoading ? (
             <View style={styles.statusRow}>
               <ActivityIndicator size="small" color={Colors.primary} />
-              <Text style={styles.statusText}>Connecting to local database...</Text>
+              <Text style={styles.statusText}>{strings.offlineConnecting}</Text>
             </View>
           ) : initResult?.success ? (
             <View>
               <View style={styles.statusRow}>
                 <View style={styles.statusIndicatorSuccess} />
                 <Text style={styles.statusTextSuccess}>
-                  Local SQLite storage active (बिना इंटरनेट सुरक्षित)
+                  {strings.offlineStorageActive}
                 </Text>
               </View>
               <Text style={styles.detailsText}>
-                Verified tables: {initResult.tables.join(', ') || 'products, sales, shops'}
+                {strings.verifiedTables}: {initResult.tables.join(', ') || 'products, sales, shops'}
               </Text>
             </View>
           ) : (
@@ -313,7 +317,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onNavigate }) => {
         {/* Footer info */}
         <View style={styles.footer}>
           <Text style={styles.footerNote}>
-            DukaanOS • Designed for Indian Small Retailers
+            {strings.footerNote}
           </Text>
         </View>
       </ScrollView>
@@ -339,6 +343,11 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: Spacing.xs,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   appName: {
     ...Typography.title,

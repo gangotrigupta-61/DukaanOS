@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, Touch, Typography } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../context';
 import { getLowStockProducts, getProducts, getSlowMovingProducts } from '../db';
 import { Product } from '../types';
 
@@ -29,6 +29,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
   onNavigateToLowStock,
   onNavigateToSlowMoving,
 }) => {
+  const { strings } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [lowStockCount, setLowStockCount] = useState<number>(0);
   const [slowMovingCount, setSlowMovingCount] = useState<number>(0);
@@ -94,19 +95,19 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
           <View style={styles.statusRow}>
             {isOutOfStock ? (
               <View style={styles.badgeOut}>
-                <Text style={styles.badgeOutText}>{Strings.statusOutOfStock}</Text>
+                <Text style={styles.badgeOutText}>{strings.statusOutOfStock}</Text>
               </View>
             ) : isLowStock ? (
               <View style={styles.badgeLow}>
-                <Text style={styles.badgeLowText}>{Strings.statusLowStock}</Text>
+                <Text style={styles.badgeLowText}>{strings.statusLowStock}</Text>
               </View>
             ) : (
               <View style={styles.badgeIn}>
-                <Text style={styles.badgeInText}>{Strings.statusInStock}</Text>
+                <Text style={styles.badgeInText}>{strings.statusInStock}</Text>
               </View>
             )}
             <Text style={styles.thresholdText}>
-              Alert below: {formattedThreshold} {item.unit}
+              {strings.threshold}: {formattedThreshold} {item.unit}
             </Text>
           </View>
         </View>
@@ -152,16 +153,16 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
             onPress={onBack}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Go back to Home"
+            accessibilityLabel={strings.btnCancel}
           >
-            <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
+            <Text style={styles.backButtonText}>{strings.btnCancel}</Text>
           </TouchableOpacity>
 
           <View style={styles.headerTitleRow}>
             <View style={styles.headerTextContainer}>
-              <Text style={styles.title}>{Strings.products}</Text>
+              <Text style={styles.title}>{strings.products}</Text>
               <Text style={styles.subtitle}>
-                {products.length} {products.length === 1 ? 'item' : 'items'} in stock • दुकान का सामान
+                {products.length} {strings.productsSubtitle}
               </Text>
             </View>
 
@@ -171,18 +172,18 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                   style={styles.headerSaleButton}
                   onPress={onQuickSale}
                   accessibilityRole="button"
-                  accessibilityLabel="Quick Sale"
+                  accessibilityLabel={strings.btnSale}
                 >
-                  <Text style={styles.headerSaleButtonText}>⚡ Sale / बिक्री</Text>
+                  <Text style={styles.headerSaleButtonText}>{strings.btnSale}</Text>
                 </TouchableOpacity>
               )}
               <TouchableOpacity
                 style={styles.headerAddButton}
                 onPress={onAddProduct}
                 accessibilityRole="button"
-                accessibilityLabel="Add Product"
+                accessibilityLabel={strings.btnAddProduct}
               >
-                <Text style={styles.headerAddButtonText}>+ Add / जोड़ें</Text>
+                <Text style={styles.headerAddButtonText}>{strings.btnAddProduct}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -197,7 +198,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                   accessibilityRole="button"
                 >
                   <Text style={styles.filterChipLowText}>
-                    ⚠ {lowStockCount} Low Stock / कम स्टॉक
+                    ⚠ {lowStockCount} {strings.lowStock}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -208,7 +209,7 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
                   accessibilityRole="button"
                 >
                   <Text style={styles.filterChipSlowText}>
-                    🐌 {slowMovingCount} Slow Moving / धीमी बिक्री
+                    🐌 {slowMovingCount} {strings.slowMoving}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -220,24 +221,24 @@ export const ProductsScreen: React.FC<ProductsScreenProps> = ({
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Loading stock • लोड हो रहा है...</Text>
+            <Text style={styles.loadingText}>{strings.loadingStock}</Text>
           </View>
         ) : products.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
               <Text style={styles.emptyIcon}>📦</Text>
             </View>
-            <Text style={styles.emptyTitle}>No products added yet / कोई सामान नहीं</Text>
+            <Text style={styles.emptyTitle}>{strings.noProductsTitle}</Text>
             <Text style={styles.emptySubtitle}>
-              Start adding your shop's stock items to keep track of inventory completely offline.
+              {strings.noProductsSubtitle}
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={onAddProduct}
               accessibilityRole="button"
-              accessibilityLabel="Add First Product"
+              accessibilityLabel={strings.btnAddFirstProduct}
             >
-              <Text style={styles.emptyButtonText}>{Strings.btnAddFirstProduct}</Text>
+              <Text style={styles.emptyButtonText}>{strings.btnAddFirstProduct}</Text>
             </TouchableOpacity>
           </View>
         ) : (

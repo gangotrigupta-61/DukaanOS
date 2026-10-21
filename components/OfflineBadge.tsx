@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Colors, Spacing, Typography } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../context';
 
 interface OfflineBadgeProps {
   label?: string;
@@ -9,18 +9,21 @@ interface OfflineBadgeProps {
 }
 
 export const OfflineBadge: React.FC<OfflineBadgeProps> = ({
-  label = Strings.offlineBadge,
+  label,
   compact = false,
 }) => {
+  const { strings } = useLanguage();
+  const displayLabel = label ?? (compact ? strings.offlineShort : strings.offlineBadge);
+
   return (
     <View
       style={[styles.container, compact && styles.containerCompact]}
       accessibilityRole="text"
-      accessibilityLabel={label}
+      accessibilityLabel={displayLabel}
     >
       <View style={styles.dot} />
       <Text style={[styles.text, compact && styles.textCompact]} numberOfLines={1}>
-        {compact ? Strings.offlineShort : label}
+        {displayLabel}
       </Text>
     </View>
   );

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, Touch, Typography } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../context';
 import { addProduct } from '../db';
 import { SUPPORTED_UNITS, SupportedUnit } from '../types';
 
@@ -26,6 +26,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
   onSuccess,
   onCancel,
 }) => {
+  const { strings } = useLanguage();
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [unit, setUnit] = useState<SupportedUnit>('kg');
@@ -36,29 +37,29 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
   const handleSave = async () => {
     const cleanName = name.trim();
     if (!cleanName) {
-      setErrorMessage(Strings.valEnterName);
+      setErrorMessage(strings.valEnterName);
       return;
     }
 
     if (!quantity.trim()) {
-      setErrorMessage(Strings.valEnterQty);
+      setErrorMessage(strings.valEnterQty);
       return;
     }
 
     const numQuantity = parseFloat(quantity.trim());
     if (isNaN(numQuantity) || numQuantity < 0) {
-      setErrorMessage(Strings.valEnterQty);
+      setErrorMessage(strings.valEnterQty);
       return;
     }
 
     if (!lowStockThreshold.trim()) {
-      setErrorMessage(Strings.valEnterThreshold);
+      setErrorMessage(strings.valEnterThreshold);
       return;
     }
 
     const numThreshold = parseFloat(lowStockThreshold.trim());
     if (isNaN(numThreshold) || numThreshold < 0) {
-      setErrorMessage(Strings.valEnterThreshold);
+      setErrorMessage(strings.valEnterThreshold);
       return;
     }
 
@@ -97,14 +98,12 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
               onPress={onCancel}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel="Cancel and go back"
+              accessibilityLabel={strings.btnCancel}
             >
-              <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
+              <Text style={styles.backButtonText}>{strings.btnCancel}</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>{Strings.addProduct}</Text>
-            <Text style={styles.subtitle}>
-              Add stock items to your offline inventory • नया सामान जोड़ें
-            </Text>
+            <Text style={styles.title}>{strings.addProductTitle}</Text>
+            <Text style={styles.subtitle}>{strings.addProductSubtitle}</Text>
           </View>
 
           {/* Validation Banner */}
@@ -118,11 +117,11 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
           <View style={styles.formSection}>
             {/* Product Name */}
             <Text style={styles.label}>
-              Product Name / सामान का नाम <Text style={styles.required}>*</Text>
+              {strings.productNameLabel} <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. Basmati Rice, Chana Dal, Sugar"
+              placeholder={strings.productNamePlaceholder}
               placeholderTextColor={Colors.textMuted}
               value={name}
               onChangeText={(text) => {
@@ -134,7 +133,7 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
 
             {/* Unit Selector */}
             <Text style={[styles.label, { marginTop: Spacing.lg }]}>
-              Unit of Measurement / इकाई <Text style={styles.required}>*</Text>
+              {strings.unitLabel} <Text style={styles.required}>*</Text>
             </Text>
             <View style={styles.unitContainer}>
               {SUPPORTED_UNITS.map((u) => {
@@ -161,11 +160,11 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
 
             {/* Quantity */}
             <Text style={[styles.label, { marginTop: Spacing.lg }]}>
-              Initial Stock Quantity / मात्रा ({unit}) <Text style={styles.required}>*</Text>
+              {strings.quantityLabel} ({unit}) <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. 20 or 16.5 (decimals supported)"
+              placeholder={strings.quantityPlaceholder}
               placeholderTextColor={Colors.textMuted}
               value={quantity}
               onChangeText={(text) => {
@@ -174,17 +173,15 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
               }}
               keyboardType="decimal-pad"
             />
-            <Text style={styles.fieldHint}>
-              Supports fractional amounts (e.g. 12.5 kg or 0.5 litre)
-            </Text>
+            <Text style={styles.fieldHint}>{strings.fractionalTip}</Text>
 
             {/* Low Stock Threshold */}
             <Text style={[styles.label, { marginTop: Spacing.lg }]}>
-              Low Stock Alert Below / अलर्ट मात्रा ({unit}) <Text style={styles.required}>*</Text>
+              {strings.thresholdLabel} ({unit}) <Text style={styles.required}>*</Text>
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g. 5"
+              placeholder={strings.thresholdPlaceholder}
               placeholderTextColor={Colors.textMuted}
               value={lowStockThreshold}
               onChangeText={(text) => {
@@ -193,9 +190,6 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
               }}
               keyboardType="decimal-pad"
             />
-            <Text style={styles.fieldHint}>
-              You will be alerted when stock reaches or drops below this level
-            </Text>
           </View>
 
           {/* Submit Button */}
@@ -204,12 +198,12 @@ export const AddProductScreen: React.FC<AddProductScreenProps> = ({
             onPress={handleSave}
             disabled={saving}
             accessibilityRole="button"
-            accessibilityLabel="Save Product to Stock"
+            accessibilityLabel={strings.btnSaveProduct}
           >
             {saving ? (
               <ActivityIndicator color={Colors.textInverse} />
             ) : (
-              <Text style={styles.saveButtonText}>{Strings.btnSaveProduct}</Text>
+              <Text style={styles.saveButtonText}>{strings.btnSaveProduct}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -249,55 +243,53 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.title,
-    color: Colors.primaryDark,
-    fontSize: 24,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
     ...Typography.body,
     color: Colors.textSecondary,
-    marginTop: 2,
-    fontSize: 13,
+    lineHeight: 22,
   },
   errorBanner: {
     backgroundColor: '#FFEBEE',
-    borderColor: Colors.error,
     borderWidth: 1,
+    borderColor: '#FFCDD2',
     borderRadius: 8,
     padding: Spacing.md,
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.lg,
   },
   errorText: {
-    ...Typography.bodySmall,
     color: Colors.error,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '500',
   },
   formSection: {
+    backgroundColor: Colors.surface,
+    borderRadius: 16,
+    padding: Spacing.lg,
+    borderWidth: 1,
+    borderColor: Colors.border,
     marginBottom: Spacing.xl,
   },
   label: {
-    ...Typography.body,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '600',
     color: Colors.textPrimary,
-    marginBottom: Spacing.xs,
+    marginBottom: Spacing.sm,
   },
   required: {
     color: Colors.error,
   },
   input: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.borderStrong,
+    height: Touch.inputHeight,
+    backgroundColor: Colors.surfaceMuted,
+    borderRadius: 10,
     borderWidth: 1.5,
-    borderRadius: 8,
+    borderColor: Colors.borderStrong,
     paddingHorizontal: Spacing.md,
-    minHeight: Touch.inputHeight,
-    ...Typography.body,
+    fontSize: 16,
     color: Colors.textPrimary,
-  },
-  fieldHint: {
-    ...Typography.bodySmall,
-    color: Colors.textMuted,
-    marginTop: 4,
-    fontSize: 12,
   },
   unitContainer: {
     flexDirection: 'row',
@@ -305,45 +297,51 @@ const styles = StyleSheet.create({
     gap: Spacing.sm,
   },
   unitChip: {
-    backgroundColor: Colors.surface,
-    borderColor: Colors.border,
-    borderWidth: 1.5,
-    borderRadius: 22,
-    minHeight: Touch.chipHeight,
     paddingHorizontal: Spacing.md,
-    alignItems: 'center',
+    paddingVertical: Spacing.sm,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: Colors.border,
+    backgroundColor: Colors.surfaceMuted,
+    minHeight: Touch.chipHeight,
     justifyContent: 'center',
   },
   unitChipSelected: {
-    backgroundColor: Colors.primarySurface,
     borderColor: Colors.primary,
+    backgroundColor: Colors.primarySurface,
   },
   unitChipText: {
-    ...Typography.bodySmall,
+    fontSize: 14,
     color: Colors.textSecondary,
     fontWeight: '600',
   },
   unitChipTextSelected: {
     color: Colors.primaryDark,
-    fontWeight: '800',
+    fontWeight: '700',
+  },
+  fieldHint: {
+    ...Typography.bodySmall,
+    color: Colors.textMuted,
+    marginTop: Spacing.xs + 2,
+    fontSize: 12,
   },
   saveButton: {
     backgroundColor: Colors.primary,
-    minHeight: Touch.buttonHeight,
+    height: Touch.buttonHeight,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
     elevation: 3,
   },
   saveButtonDisabled: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   saveButtonText: {
-    ...Typography.subtitle,
+    fontSize: 17,
     fontWeight: '700',
     color: Colors.textInverse,
   },

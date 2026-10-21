@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, Touch, Typography } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../context';
 import { getProducts, recordSale } from '../db';
 import { Product, RecordSaleResult } from '../types';
 
@@ -28,6 +28,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
   onNavigateToAddProduct,
   onNavigateToProducts,
 }) => {
+  const { strings } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -59,9 +60,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
 
   const handleSelectProduct = (product: Product) => {
     if (product.quantity <= 0) {
-      setErrorMessage(
-        `"${product.name}" is out of stock (0 ${product.unit} available) • स्टॉक खत्म है`
-      );
+      setErrorMessage(`"${product.name}" ${strings.statusOutOfStock} (0 ${product.unit})`);
       return;
     }
     setSelectedProduct(product);
@@ -72,25 +71,25 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
 
   const handleRecordSale = async () => {
     if (!selectedProduct) {
-      setErrorMessage('Please select a product to sell • सामान चुनें');
+      setErrorMessage(strings.stepSelectProduct);
       return;
     }
 
     const trimmedQty = saleQuantity.trim();
     if (!trimmedQty) {
-      setErrorMessage(Strings.valEnterQty);
+      setErrorMessage(strings.valEnterQty);
       return;
     }
 
     const numQty = parseFloat(trimmedQty);
     if (isNaN(numQty) || numQty <= 0) {
-      setErrorMessage(Strings.valQtyPositive);
+      setErrorMessage(strings.valQtyPositive);
       return;
     }
 
     if (numQty > selectedProduct.quantity) {
       setErrorMessage(
-        `Not enough stock • केवल ${selectedProduct.quantity} ${selectedProduct.unit} उपलब्ध है`
+        `${strings.valNotEnoughStock} (${selectedProduct.quantity} ${selectedProduct.unit})`
       );
       return;
     }
@@ -149,20 +148,20 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               onPress={onBack}
               style={styles.backButton}
               accessibilityRole="button"
-              accessibilityLabel="Back to previous screen"
+              accessibilityLabel={strings.btnCancel}
             >
-              <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
+              <Text style={styles.backButtonText}>{strings.btnCancel}</Text>
             </TouchableOpacity>
 
             <View style={styles.headerTitleRow}>
               <View>
-                <Text style={styles.title}>{Strings.quickSale}</Text>
+                <Text style={styles.title}>{strings.quickSale}</Text>
                 <Text style={styles.subtitle}>
-                  Select product, enter quantity, record sale • तुरंत बिक्री
+                  {strings.quickSaleSubtitle}
                 </Text>
               </View>
               <View style={styles.badgeOffline}>
-                <Text style={styles.badgeOfflineText}>Offline</Text>
+                <Text style={styles.badgeOfflineText}>{strings.offlineShort}</Text>
               </View>
             </View>
           </View>
@@ -172,14 +171,14 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
             <View style={styles.successBanner}>
               <View style={styles.successHeaderRow}>
                 <Text style={styles.successIcon}>✅</Text>
-                <Text style={styles.successTitle}>Sale Recorded • बिक्री दर्ज हुई!</Text>
+                <Text style={styles.successTitle}>{strings.saleRecordedSuccess}</Text>
               </View>
               <Text style={styles.successDetails}>
-                Sold <Text style={styles.boldText}>{lastSaleResult.sale.quantity} {lastSaleResult.product.unit}</Text> of{' '}
+                {strings.soldDetails} <Text style={styles.boldText}>{lastSaleResult.sale.quantity} {lastSaleResult.product.unit}</Text> of{' '}
                 <Text style={styles.boldText}>{lastSaleResult.product.name}</Text>
               </Text>
               <Text style={styles.successRemaining}>
-                Remaining stock / बचा हुआ स्टॉक:{' '}
+                {strings.remainingStockText}:{' '}
                 <Text style={styles.boldText}>
                   {lastSaleResult.remaining_quantity} {lastSaleResult.product.unit}
                 </Text>
@@ -191,7 +190,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                   onPress={onNavigateToProducts}
                   accessibilityRole="button"
                 >
-                  <Text style={styles.viewProductsButtonText}>{Strings.btnViewProducts}</Text>
+                  <Text style={styles.viewProductsButtonText}>{strings.btnViewProducts}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -208,24 +207,24 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
           {loading ? (
             <View style={styles.centerContainer}>
               <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.loadingText}>Loading inventory...</Text>
+              <Text style={styles.loadingText}>{strings.loadingStock}</Text>
             </View>
           ) : products.length === 0 ? (
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconCircle}>
                 <Text style={styles.emptyIcon}>📦</Text>
               </View>
-              <Text style={styles.emptyTitle}>No products available / कोई सामान नहीं</Text>
+              <Text style={styles.emptyTitle}>{strings.noProductsTitle}</Text>
               <Text style={styles.emptySubtitle}>
-                You need to add products to your stock before you can record sales.
+                {strings.noProductsSaleSubtitle}
               </Text>
               <TouchableOpacity
                 style={styles.emptyButton}
                 onPress={onNavigateToAddProduct}
                 accessibilityRole="button"
-                accessibilityLabel="Add Product"
+                accessibilityLabel={strings.btnAddFirstProduct}
               >
-                <Text style={styles.emptyButtonText}>{Strings.btnAddFirstProduct}</Text>
+                <Text style={styles.emptyButtonText}>{strings.btnAddFirstProduct}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -233,7 +232,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               {/* Step 1: Select Product */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>
-                  1. Select Product / सामान चुनें {selectedProduct && `(${selectedProduct.name})`}
+                  {strings.stepSelectProduct} {selectedProduct && `(${selectedProduct.name})`}
                 </Text>
                 <View style={styles.productsList}>
                   {products.map((p) => {
@@ -263,11 +262,11 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                           </Text>
                           {isOutOfStock ? (
                             <Text style={styles.outOfStockText}>
-                              {Strings.statusOutOfStock}
+                              {strings.statusOutOfStock}
                             </Text>
                           ) : (
                             <Text style={styles.thresholdSubtext}>
-                              Alert below: {p.low_stock_threshold} {p.unit}
+                              {strings.threshold}: {p.low_stock_threshold} {p.unit}
                             </Text>
                           )}
                         </View>
@@ -310,7 +309,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
               {selectedProduct && (
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>
-                    2. Enter Quantity / बिक्री मात्रा ({selectedProduct.unit})
+                    {strings.stepEnterQuantity} ({selectedProduct.unit})
                   </Text>
 
                   <View style={styles.quantityCard}>
@@ -319,7 +318,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         {selectedProduct.name}
                       </Text>
                       <Text style={styles.selectedProductStock}>
-                        In Stock / उपलब्ध:{' '}
+                        {strings.currentStock}:{' '}
                         <Text style={styles.boldText}>
                           {selectedProduct.quantity} {selectedProduct.unit}
                         </Text>
@@ -327,7 +326,7 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                     </View>
 
                     {/* Quick Preset Buttons for fast Kirana mobile entry */}
-                    <Text style={styles.presetLabel}>Quick Presets / तुरंत मात्रा:</Text>
+                    <Text style={styles.presetLabel}>Quick Presets:</Text>
                     <View style={styles.presetsRow}>
                       {[0.5, 1, 2, 5].map((preset) => (
                         <TouchableOpacity
@@ -347,18 +346,18 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         accessibilityRole="button"
                       >
                         <Text style={styles.presetChipAllText}>
-                          All / पूरा ({selectedProduct.quantity})
+                          {strings.presetAll} ({selectedProduct.quantity})
                         </Text>
                       </TouchableOpacity>
                     </View>
 
                     {/* Numeric Input */}
                     <Text style={styles.inputLabel}>
-                      Quantity Sold / बेची गई मात्रा ({selectedProduct.unit}) <Text style={styles.required}>*</Text>
+                      {strings.quantitySoldLabel} ({selectedProduct.unit}) <Text style={styles.required}>*</Text>
                     </Text>
                     <TextInput
                       style={[styles.input, isOverStock && styles.inputError]}
-                      placeholder="e.g. 3.5, 1, 0.5 (decimals supported)"
+                      placeholder={strings.quantitySoldPlaceholder}
                       placeholderTextColor={Colors.textMuted}
                       value={saleQuantity}
                       onChangeText={(val) => {
@@ -376,15 +375,15 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                           isOverStock ? styles.summaryBoxError : styles.summaryBoxValid,
                         ]}
                       >
-                        <Text style={styles.summaryTitle}>Sale Summary / बिक्री सारांश</Text>
+                        <Text style={styles.summaryTitle}>{strings.saleSummary}</Text>
 
                         <View style={styles.summaryRow}>
-                          <Text style={styles.summaryLabel}>Product / सामान:</Text>
+                          <Text style={styles.summaryLabel}>{strings.productLabel}:</Text>
                           <Text style={styles.summaryValue}>{selectedProduct.name}</Text>
                         </View>
 
                         <View style={styles.summaryRow}>
-                          <Text style={styles.summaryLabel}>Sold / बिक्री:</Text>
+                          <Text style={styles.summaryLabel}>{strings.soldLabel}:</Text>
                           <Text
                             style={[
                               styles.summaryValue,
@@ -396,10 +395,10 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                         </View>
 
                         <View style={styles.summaryRow}>
-                          <Text style={styles.summaryLabel}>Remaining / बाकी बचेगा:</Text>
+                          <Text style={styles.summaryLabel}>{strings.remainingLabel}:</Text>
                           {isOverStock ? (
                             <Text style={styles.summaryValueNegative}>
-                              Not enough stock (Short by{' '}
+                              {strings.valNotEnoughStock} (Short by{' '}
                               {Math.round((parsedQty - selectedProduct.quantity) * 1000) / 1000}{' '}
                               {selectedProduct.unit})
                             </Text>
@@ -427,13 +426,13 @@ export const QuickSaleScreen: React.FC<QuickSaleScreenProps> = ({
                       onPress={handleRecordSale}
                       disabled={!isValidSaleNumber || isOverStock || isRecording}
                       accessibilityRole="button"
-                      accessibilityLabel="Record Sale"
+                      accessibilityLabel={strings.btnRecordSale}
                     >
                       {isRecording ? (
                         <ActivityIndicator color={Colors.textInverse} />
                       ) : (
                         <Text style={styles.recordButtonText}>
-                          {Strings.btnRecordSale} ({parsedQty || 0} {selectedProduct.unit})
+                          {strings.btnRecordSale} ({parsedQty || 0} {selectedProduct.unit})
                         </Text>
                       )}
                     </TouchableOpacity>

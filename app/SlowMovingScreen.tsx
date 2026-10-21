@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Colors, Spacing, Touch, Typography } from '../constants/theme';
-import { Strings } from '../constants/strings';
+import { useLanguage } from '../context';
 import { getSlowMovingProducts } from '../db';
 import { SlowMovingItem } from '../types';
 
@@ -24,6 +24,7 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
   onBack,
   onNavigateToProducts,
 }) => {
+  const { strings, t } = useLanguage();
   const [items, setItems] = useState<SlowMovingItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -84,26 +85,26 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
                   : styles.statusBadgeTextSlow,
               ]}
             >
-              {item.is_never_sold ? Strings.statusNeverSold : Strings.statusSlowMoving}
+              {item.is_never_sold ? strings.statusNeverSold : strings.statusSlowMoving}
             </Text>
           </View>
         </View>
 
         <View style={styles.itemDetailsRow}>
           <View style={styles.stockInfo}>
-            <Text style={styles.detailLabel}>Current Stock / स्टॉक:</Text>
+            <Text style={styles.detailLabel}>{strings.currentStock}:</Text>
             <Text style={styles.stockValue}>
               {formattedQty} {item.unit}
             </Text>
           </View>
 
           <View style={styles.movementInfo}>
-            <Text style={styles.detailLabel}>Sales Activity / बिक्री स्थिति:</Text>
+            <Text style={styles.detailLabel}>{strings.slowMoving}:</Text>
             {item.is_never_sold ? (
-              <Text style={styles.neverSoldText}>No sales recorded yet (कभी नहीं बिका)</Text>
+              <Text style={styles.neverSoldText}>{strings.statusNeverSold}</Text>
             ) : (
               <Text style={styles.slowMovingText}>
-                Last sold: {item.days_since_last_sale} days ago ({item.days_since_last_sale} दिन पहले)
+                {t('lastSoldDaysAgo', { days: item.days_since_last_sale ?? 0 })}
               </Text>
             )}
           </View>
@@ -122,14 +123,14 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
             onPress={onBack}
             style={styles.backButton}
             accessibilityRole="button"
-            accessibilityLabel="Back to Home"
+            accessibilityLabel={strings.btnCancel}
           >
-            <Text style={styles.backButtonText}>{Strings.btnCancel}</Text>
+            <Text style={styles.backButtonText}>{strings.btnCancel}</Text>
           </TouchableOpacity>
 
-          <Text style={styles.title}>{Strings.slowMoving}</Text>
+          <Text style={styles.title}>{strings.slowMoving}</Text>
           <Text style={styles.subtitle}>
-            Products with no sales recorded in the last 30+ days or never sold • सामान जो नहीं बिक रहा
+            {strings.slowMovingSubtitle}
           </Text>
         </View>
 
@@ -137,20 +138,20 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
         {!loading && items.length > 0 && (
           <View style={styles.summaryBar}>
             <Text style={styles.summaryTitle}>
-              {items.length} {items.length === 1 ? 'product needs' : 'products need'} movement • ध्यान दें
+              {items.length} {strings.productsNeedMovement}
             </Text>
             <View style={styles.summaryChipsRow}>
               {neverSoldCount > 0 && (
                 <View style={styles.summaryChipNever}>
                   <Text style={styles.summaryChipNeverText}>
-                    {neverSoldCount} Never Sold / कभी नहीं बिका
+                    {neverSoldCount} {strings.statusNeverSold}
                   </Text>
                 </View>
               )}
               {slowMovingCount > 0 && (
                 <View style={styles.summaryChipSlow}>
                   <Text style={styles.summaryChipSlowText}>
-                    {slowMovingCount} Inactive (30+ days)
+                    {slowMovingCount} {strings.statusSlowMoving}
                   </Text>
                 </View>
               )}
@@ -162,23 +163,24 @@ export const SlowMovingScreen: React.FC<SlowMovingScreenProps> = ({
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={Colors.primary} />
-            <Text style={styles.loadingText}>Analyzing sales history...</Text>
+            <Text style={styles.loadingText}>{strings.loadingStock}</Text>
           </View>
         ) : items.length === 0 ? (
           <View style={styles.emptyContainer}>
             <View style={styles.emptyIconCircle}>
               <Text style={styles.emptyIcon}>🚀</Text>
             </View>
-            <Text style={styles.emptyTitle}>All products are moving! • सब सामान बिक रहा है</Text>
+            <Text style={styles.emptyTitle}>{strings.allProductsMoving}</Text>
             <Text style={styles.emptySubtitle}>
-              Great news! Every product in your store has recorded sales within the last 30 days.
+              {strings.allProductsMovingSubtitle}
             </Text>
             <TouchableOpacity
               style={styles.emptyButton}
               onPress={onNavigateToProducts}
               accessibilityRole="button"
+              accessibilityLabel={strings.btnViewProducts}
             >
-              <Text style={styles.emptyButtonText}>{Strings.btnViewProducts}</Text>
+              <Text style={styles.emptyButtonText}>{strings.btnViewProducts}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -208,7 +210,7 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.md,
   },
   header: {
-    marginBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   backButton: {
     alignSelf: 'flex-start',
@@ -225,66 +227,60 @@ const styles = StyleSheet.create({
   },
   title: {
     ...Typography.title,
-    color: Colors.primaryDark,
-    fontSize: 24,
+    color: Colors.textPrimary,
+    marginBottom: Spacing.xs,
   },
   subtitle: {
-    ...Typography.bodySmall,
+    ...Typography.body,
     color: Colors.textSecondary,
-    marginTop: 2,
-    fontSize: 12,
+    fontSize: 14,
+    lineHeight: 20,
   },
   summaryBar: {
     backgroundColor: Colors.surface,
-    borderColor: Colors.border,
-    borderWidth: 1.5,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
     padding: Spacing.md,
-    marginBottom: Spacing.sm + 4,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: Spacing.xs,
+    marginBottom: Spacing.md,
   },
   summaryTitle: {
-    ...Typography.body,
+    fontSize: 14,
     fontWeight: '700',
     color: Colors.textPrimary,
-    fontSize: 14,
+    marginBottom: Spacing.xs,
   },
   summaryChipsRow: {
     flexDirection: 'row',
-    gap: Spacing.xs,
+    gap: Spacing.sm,
   },
   summaryChipNever: {
     backgroundColor: '#EDE7F6',
-    borderColor: '#D1C4E9',
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: 6,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
+    borderColor: '#D1C4E9',
   },
   summaryChipNeverText: {
-    ...Typography.badge,
     color: Colors.purple,
-    fontSize: 11,
+    fontWeight: '700',
+    fontSize: 12,
   },
   summaryChipSlow: {
     backgroundColor: '#FFF3E0',
-    borderColor: '#FFE0B2',
+    paddingHorizontal: Spacing.sm + 2,
+    paddingVertical: Spacing.xs,
+    borderRadius: 6,
     borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
+    borderColor: '#FFE0B2',
   },
   summaryChipSlowText: {
-    ...Typography.badge,
     color: Colors.warning,
-    fontSize: 11,
+    fontWeight: '700',
+    fontSize: 12,
   },
   listContent: {
-    paddingVertical: Spacing.xs,
     paddingBottom: Spacing.xxl,
   },
   separator: {
@@ -292,22 +288,22 @@ const styles = StyleSheet.create({
   },
   itemCard: {
     backgroundColor: Colors.surface,
+    borderRadius: 14,
     borderWidth: 1.5,
-    borderRadius: 12,
     padding: Spacing.md,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.04,
-    shadowRadius: 2,
+    shadowRadius: 3,
     elevation: 1,
   },
   itemCardNever: {
     borderColor: '#D1C4E9',
-    backgroundColor: '#FCFBFE',
+    backgroundColor: '#FAF8FC',
   },
   itemCardSlow: {
-    borderColor: '#FFE082',
-    backgroundColor: '#FFFEF7',
+    borderColor: '#FFE0B2',
+    backgroundColor: '#FFFDF9',
   },
   itemHeaderRow: {
     flexDirection: 'row',
@@ -316,108 +312,102 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.sm,
   },
   itemName: {
-    ...Typography.subtitle,
+    fontSize: 17,
     fontWeight: '700',
     color: Colors.textPrimary,
     flex: 1,
     marginRight: Spacing.sm,
-    fontSize: 16,
   },
   statusBadge: {
-    borderRadius: 6,
+    paddingHorizontal: Spacing.sm,
     paddingVertical: 3,
-    paddingHorizontal: 8,
+    borderRadius: 6,
   },
   statusBadgeNever: {
-    backgroundColor: Colors.purple,
+    backgroundColor: '#EDE7F6',
   },
   statusBadgeSlow: {
-    backgroundColor: Colors.warning,
+    backgroundColor: '#FFF3E0',
   },
   statusBadgeText: {
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 0.3,
+    letterSpacing: 0.4,
   },
   statusBadgeTextNever: {
-    color: Colors.textInverse,
+    color: Colors.purple,
   },
   statusBadgeTextSlow: {
-    color: Colors.textInverse,
+    color: Colors.warning,
   },
   itemDetailsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.surfaceMuted,
     borderRadius: 8,
-    padding: Spacing.sm,
+    padding: Spacing.sm + 2,
   },
   stockInfo: {
     flex: 1,
   },
   detailLabel: {
-    ...Typography.bodySmall,
+    fontSize: 12,
     color: Colors.textMuted,
-    fontSize: 11,
+    fontWeight: '500',
+    marginBottom: 2,
   },
   stockValue: {
-    ...Typography.body,
-    fontWeight: '800',
-    color: Colors.primaryDark,
     fontSize: 16,
-    marginTop: 1,
+    fontWeight: '700',
+    color: Colors.textPrimary,
   },
   movementInfo: {
+    flex: 1.4,
     alignItems: 'flex-end',
   },
   neverSoldText: {
-    ...Typography.bodySmall,
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.purple,
-    fontWeight: '700',
-    marginTop: 1,
-    fontSize: 12,
   },
   slowMovingText: {
-    ...Typography.bodySmall,
+    fontSize: 13,
+    fontWeight: '600',
     color: Colors.warning,
-    fontWeight: '700',
-    marginTop: 1,
-    fontSize: 12,
   },
   centerContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: Spacing.xxl,
+    paddingVertical: Spacing.xxl,
   },
   loadingText: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: Colors.textMuted,
     marginTop: Spacing.md,
   },
   emptyContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: Spacing.xl,
-    paddingBottom: Spacing.xxl,
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.xxl,
   },
   emptyIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: Colors.primarySurface,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   emptyIcon: {
-    fontSize: 36,
+    fontSize: 32,
   },
   emptyTitle: {
     ...Typography.subtitle,
-    fontWeight: '700',
-    color: Colors.primaryDark,
+    color: Colors.textPrimary,
     marginBottom: Spacing.xs,
     textAlign: 'center',
   },
@@ -425,19 +415,19 @@ const styles = StyleSheet.create({
     ...Typography.body,
     color: Colors.textSecondary,
     textAlign: 'center',
-    marginBottom: Spacing.xl,
     lineHeight: 22,
+    marginBottom: Spacing.lg,
   },
   emptyButton: {
     backgroundColor: Colors.primary,
-    minHeight: Touch.buttonHeight,
-    paddingHorizontal: Spacing.xl,
+    height: Touch.buttonHeight,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
   },
   emptyButtonText: {
-    ...Typography.body,
+    fontSize: 16,
     fontWeight: '700',
     color: Colors.textInverse,
   },

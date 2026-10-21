@@ -171,6 +171,17 @@ export async function saveShop(
   return inserted;
 }
 
+/**
+ * Updates the selected language in the active shop profile.
+ */
+export async function updateShopLanguage(
+  language: string,
+  db?: SQLite.SQLiteDatabase
+): Promise<void> {
+  const activeDb = db ?? (await getDatabase());
+  await activeDb.runAsync('UPDATE shops SET language = ?;', language.trim());
+}
+
 // ==========================================
 // PRODUCT OPERATIONS
 // ==========================================
